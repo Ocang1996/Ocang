@@ -1,0 +1,105 @@
+<svg width="360" height="240" viewBox="0 0 360 240" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="360" height="240" fill="white" rx="8" />
+  
+  <!-- Title -->
+  <text x="20" y="24" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#374151">
+    Status Pegawai
+  </text>
+  
+  <!-- PNS Bar -->
+  <text x="20" y="70" font-family="Inter, sans-serif" font-size="12" fill="#4B5563">PNS</text>
+  <text id="pnsCount" x="340" y="70" font-family="Inter, sans-serif" font-size="12" fill="#4B5563" text-anchor="end" font-weight="500">366</text>
+  <rect x="20" y="80" width="320" height="12" rx="6" fill="#E5E7EB" />
+  <rect id="pnsBar" x="20" y="80" width="276" height="12" rx="6" fill="#10B981">
+    <animate attributeName="width" from="0" to="276" dur="1.2s" begin="0s" fill="freeze" />
+  </rect>
+  
+  <!-- PPPK Bar -->
+  <text x="20" y="120" font-family="Inter, sans-serif" font-size="12" fill="#4B5563">PPPK</text>
+  <text id="pppkCount" x="340" y="120" font-family="Inter, sans-serif" font-size="12" fill="#4B5563" text-anchor="end" font-weight="500">37</text>
+  <rect x="20" y="130" width="320" height="12" rx="6" fill="#E5E7EB" />
+  <rect id="pppkBar" x="20" y="130" width="28" height="12" rx="6" fill="#3B82F6">
+    <animate attributeName="width" from="0" to="28" dur="1.2s" begin="0.2s" fill="freeze" />
+  </rect>
+  
+  <!-- Non ASN Bar -->
+  <text x="20" y="170" font-family="Inter, sans-serif" font-size="12" fill="#4B5563">Non ASN</text>
+  <text id="nonAsnCount" x="340" y="170" font-family="Inter, sans-serif" font-size="12" fill="#4B5563" text-anchor="end" font-weight="500">22</text>
+  <rect x="20" y="180" width="320" height="12" rx="6" fill="#E5E7EB" />
+  <rect id="nonAsnBar" x="20" y="180" width="17" height="12" rx="6" fill="#F59E0B">
+    <animate attributeName="width" from="0" to="17" dur="1.2s" begin="0.4s" fill="freeze" />
+  </rect>
+  
+  <!-- Legend -->
+  <rect x="80" y="210" width="10" height="10" rx="2" fill="#10B981" />
+  <text x="95" y="219" font-family="Inter, sans-serif" font-size="11" fill="#6B7280">PNS</text>
+  
+  <rect x="150" y="210" width="10" height="10" rx="2" fill="#3B82F6" />
+  <text x="165" y="219" font-family="Inter, sans-serif" font-size="11" fill="#6B7280">PPPK</text>
+  
+  <rect x="220" y="210" width="10" height="10" rx="2" fill="#F59E0B" />
+  <text x="235" y="219" font-family="Inter, sans-serif" font-size="11" fill="#6B7280">Non ASN</text>
+  
+  <!-- Animations to update numbers and bars -->
+  <script type="text/javascript"><![CDATA[
+    // Function to generate a random number within a range
+    function randomChange(value, percentRange) {
+      const changePercent = (Math.random() * percentRange * 2) - percentRange; // -range to +range
+      const change = Math.floor(value * (changePercent / 100));
+      return value + change;
+    }
+    
+    // Get elements
+    const pnsText = document.getElementById('pnsCount');
+    const pppkText = document.getElementById('pppkCount');
+    const nonAsnText = document.getElementById('nonAsnCount');
+    
+    const pnsBar = document.getElementById('pnsBar');
+    const pppkBar = document.getElementById('pppkBar');
+    const nonAsnBar = document.getElementById('nonAsnBar');
+    
+    // Initial values
+    let pnsValue = 366;
+    let pppkValue = 37;
+    let nonAsnValue = 22;
+    const totalWidth = 320; // Max width of the bar
+    
+    // Update function
+    function updateChart() {
+      // Update values with small changes
+      pnsValue = randomChange(pnsValue, 3);
+      pppkValue = randomChange(pppkValue, 5);
+      nonAsnValue = randomChange(nonAsnValue, 8);
+      
+      // Calculate total
+      const total = pnsValue + pppkValue + nonAsnValue;
+      
+      // Calculate widths
+      const pnsWidth = Math.floor((pnsValue / total) * totalWidth);
+      const pppkWidth = Math.floor((pppkValue / total) * totalWidth);
+      const nonAsnWidth = Math.floor((nonAsnValue / total) * totalWidth);
+      
+      // Update text
+      pnsText.textContent = pnsValue.toString();
+      pppkText.textContent = pppkValue.toString();
+      nonAsnText.textContent = nonAsnValue.toString();
+      
+      // Update bars with animation
+      pnsBar.animate([{ width: pnsBar.getAttribute('width') + 'px' }, { width: pnsWidth + 'px' }], 
+        { duration: 800, fill: 'forwards', easing: 'ease-out' });
+      pnsBar.setAttribute('width', pnsWidth);
+      
+      pppkBar.animate([{ width: pppkBar.getAttribute('width') + 'px' }, { width: pppkWidth + 'px' }], 
+        { duration: 800, fill: 'forwards', easing: 'ease-out' });
+      pppkBar.setAttribute('width', pppkWidth);
+      
+      nonAsnBar.animate([{ width: nonAsnBar.getAttribute('width') + 'px' }, { width: nonAsnWidth + 'px' }], 
+        { duration: 800, fill: 'forwards', easing: 'ease-out' });
+      nonAsnBar.setAttribute('width', nonAsnWidth);
+    }
+    
+    // Update every 3 seconds
+    setInterval(updateChart, 3000);
+  ]]></script>
+</svg> 

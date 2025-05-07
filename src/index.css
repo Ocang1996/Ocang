@@ -1,0 +1,436 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base font size variables - will be overridden by JS */
+    --font-size-base: 1rem;
+    --font-size-heading: 1.25rem;
+    --font-size-small: 0.875rem;
+    --transition-theme: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
+  }
+  
+  /* Pastikan font Intro digunakan di seluruh aplikasi */
+  body, button, input, select, textarea {
+    font-family: 'Intro', system-ui, -apple-system, sans-serif;
+  }
+  
+  body {
+    @apply transition-colors duration-300 ease-in-out;
+    font-size: var(--font-size-base);
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-size: var(--font-size-heading);
+  }
+
+  small, .text-sm {
+    font-size: var(--font-size-small);
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+  
+  /* Smooth transitions for theme changes */
+  .card, .bg-white, .bg-gray-50, .bg-gray-100, .bg-gray-800, .bg-gray-900,
+  .text-gray-500, .text-gray-700, .text-gray-800, .text-gray-900,
+  .text-white, .text-gray-200, .text-gray-300, .text-gray-400,
+  .border, .border-gray-200, .border-gray-300, .border-gray-600, .border-gray-700 {
+    transition: var(--transition-theme);
+  }
+  
+  /* Ensure chart components transition smoothly */
+  .chart-container canvas,
+  .pie-chart-inner, 
+  .doughnut-chart-inner {
+    transition: filter 0.3s ease;
+  }
+  
+  /* Fix for tooltip colors in charts */
+  .chartjs-tooltip {
+    transition: var(--transition-theme);
+    opacity: 1 !important;
+  }
+}
+
+/* Layout structure fixes */
+.main-content-area {
+  min-width: 0; /* Prevent flex items from overflowing */
+  width: 100%;
+}
+
+/* Ensure content doesn't overlap sidebar */
+@media (min-width: 1024px) {
+  .content-after-sidebar {
+    margin-left: 16rem; /* Match sidebar width */
+    width: calc(100% - 16rem); /* Adjust width to account for sidebar */
+  }
+  
+  .content-after-sidebar-collapsed {
+    margin-left: 5rem; /* Match collapsed sidebar width */
+    width: calc(100% - 5rem); /* Adjust width for collapsed sidebar */
+  }
+}
+
+/* Modal positioning to avoid sidebar overlap */
+@media (min-width: 1024px) {
+  .modal-container {
+    margin-left: 16rem; /* 64px, matches sidebar width */
+    width: calc(100% - 16rem); /* Ensure modal takes full width minus sidebar */
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+  }
+  
+  .modal-container-collapsed {
+    margin-left: 5rem; /* 20px, matches collapsed sidebar width */
+    width: calc(100% - 5rem); /* Ensure modal takes full width minus collapsed sidebar */
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+  }
+}
+
+/* Font size classes */
+.text-kecil {
+  --font-size-base: 0.875rem;
+  --font-size-heading: 1.125rem;
+  --font-size-small: 0.75rem;
+}
+
+.text-sedang {
+  --font-size-base: 1rem;
+  --font-size-heading: 1.25rem;
+  --font-size-small: 0.875rem;
+}
+
+.text-besar {
+  --font-size-base: 1.125rem;
+  --font-size-heading: 1.5rem;
+  --font-size-small: 1rem;
+}
+
+/* Employee table styles */
+@layer components {
+  .employee-table-container {
+    @apply relative max-w-full overflow-x-auto sm:rounded-lg pb-2;
+    min-width: 0; /* Prevent table from overflowing its container */
+  }
+
+  .employee-table {
+    @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700 border-collapse;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  .employee-table thead th {
+    @apply py-3 px-6 text-left text-xs font-medium uppercase tracking-wider;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .employee-table td.name-cell {
+    @apply px-6 py-4 max-w-[250px] sm:max-w-[300px] md:max-w-[350px];
+    z-index: 1;
+    position: relative; /* Ensure proper positioning in the table */
+  }
+
+  .employee-table .name-content {
+    @apply text-sm font-medium text-gray-900 dark:text-white break-words whitespace-normal line-clamp-2 hover:line-clamp-none;
+  }
+  
+  .employee-table tr:hover .name-content {
+    @apply line-clamp-none;
+  }
+  
+  /* Hover effect for sticky column */
+  .employee-table tr:hover .name-cell {
+    @apply bg-gray-50 dark:bg-gray-700/50;
+  }
+}
+
+@layer utilities {
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+  .hover\:scale-102:hover {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20px, -30px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(-30px, -20px) scale(1.05);
+  }
+}
+
+.animate-blob {
+  animation: blob 8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 3D Pie Chart Effects */
+.pie-3d-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.pie-3d-rotate {
+  animation: rotate3d 20s infinite linear;
+  transform-style: preserve-3d;
+}
+
+.pie-segment {
+  transform-origin: center;
+  transition: transform 0.3s ease-out, filter 0.3s ease;
+}
+
+.pie-segment:hover {
+  transform: translateZ(15px) scale(1.05);
+  filter: brightness(1.1);
+  z-index: 10;
+}
+
+.pie-segment.selected {
+  transform: translateZ(20px) scale(1.1);
+  filter: brightness(1.2);
+  z-index: 20;
+}
+
+@keyframes rotate3d {
+  0% {
+    transform: rotateY(0) rotateX(15deg);
+  }
+  25% {
+    transform: rotateY(90deg) rotateX(10deg);
+  }
+  50% {
+    transform: rotateY(180deg) rotateX(15deg);
+  }
+  75% {
+    transform: rotateY(270deg) rotateX(10deg);
+  }
+  100% {
+    transform: rotateY(360deg) rotateX(15deg);
+  }
+}
+
+.parallax-effect {
+  transition: transform 0.2s ease-out;
+}
+
+/* Detail panel animations */
+.detail-panel-enter {
+  animation: slideIn 0.3s forwards;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease forwards;
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.3s ease forwards;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.float-animation {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Dark mode transitions */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Chart style enhancements */
+.chart-card {
+  @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700;
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+  @apply shadow-md;
+  transform: translateY(-2px);
+}
+
+.chart-header {
+  @apply p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between;
+  background: linear-gradient(to right, rgba(249, 250, 251, 0.8), rgba(255, 255, 255, 1));
+}
+
+.dark .chart-header {
+  background: linear-gradient(to right, rgba(31, 41, 55, 0.8), rgba(17, 24, 39, 1));
+}
+
+.chart-container {
+  @apply p-4 h-80;
+}
+
+/* Fix NaN display in charts */
+.nan-value-fix::before {
+  content: "0";
+}
+
+canvas:empty::after {
+  content: "No data available";
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Demographic report specific styles */
+.demographic-stat-card {
+  @apply p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm;
+  transition: all 0.3s ease;
+}
+
+.demographic-stat-card:hover {
+  @apply shadow-md border-blue-100 dark:border-blue-900;
+}
+
+.demographic-stat-icon {
+  @apply p-3 rounded-lg;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.2));
+}
+
+.dark .demographic-stat-icon {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.3));
+}
+
+/* Fix for modals to fully cover content */
+.fixed.inset-0.z-60 {
+  z-index: 60; /* Ensure this is higher than any table or content element */
+}
+
+.fixed.inset-0.z-60 .fixed.inset-0 {
+  z-index: 65; /* Higher than the modal background */
+}
+
+.fixed.inset-0.z-60 .relative.z-70 {
+  z-index: 70; /* Higher than the modal overlay */
+  max-height: 90vh; /* Prevent modal from being too tall */
+}
+
+/* Custom CSS animations for charts and visualizations */
+@keyframes slow-wave {
+  0% {
+    d: path('M0,50 Q25,30 50,50 T100,50 V100 H0 Z');
+  }
+  50% {
+    d: path('M0,50 Q25,45 50,35 T100,50 V100 H0 Z');
+  }
+  100% {
+    d: path('M0,50 Q25,30 50,50 T100,50 V100 H0 Z');
+  }
+}
+
+.animate-slow-wave {
+  animation: slow-wave 8s ease-in-out infinite;
+}
+
+/* Custom transition timing functions */
+.ease-out-expo {
+  transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.duration-1200 {
+  transition-duration: 1200ms;
+}
+
+.duration-1500 {
+  transition-duration: 1500ms;
+}
+
+/* 3D card hover effects */
+.hover\:scale-\[1\.01\]:hover {
+  transform: scale(1.01);
+}
+
+.scale-\[1\.02\] {
+  transform: scale(1.02);
+}
+
+/* Custom glassmorphism effects */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}

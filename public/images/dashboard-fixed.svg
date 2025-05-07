@@ -1,0 +1,127 @@
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Definitions for reuse -->
+  <defs>
+    <filter id="shadow" x="-2" y="0" width="104%" height="104%">
+      <feOffset result="offOut" in="SourceAlpha" dx="2" dy="2" />
+      <feGaussianBlur result="blurOut" in="offOut" stdDeviation="2" />
+      <feColorMatrix result="matrixOut" in="blurOut" type="matrix"
+        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0" />
+      <feBlend in="SourceGraphic" in2="matrixOut" mode="normal" />
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="500" fill="#f8fafc" rx="8" ry="8"/>
+  
+  <!-- Header -->
+  <rect x="0" y="0" width="800" height="60" fill="#ffffff" rx="8" ry="8" filter="url(#shadow)"/>
+  <text x="30" y="38" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#334155">Manajemen Pegawai</text>
+  <circle cx="750" cy="30" r="15" fill="#e2e8f0"/>
+  <circle cx="700" cy="30" r="15" fill="#e2e8f0"/>
+  
+  <!-- Sidebar -->
+  <rect x="0" y="60" width="200" height="440" fill="#ffffff" filter="url(#shadow)"/>
+  
+  <!-- Sidebar menu items -->
+  <rect x="20" y="100" width="160" height="40" fill="#eff6ff" rx="6" ry="6"/>
+  <text x="70" y="125" font-family="Arial, sans-serif" font-size="14" font-weight="medium" fill="#3b82f6">Dashboard</text>
+  
+  <rect x="20" y="150" width="160" height="40" fill="#f8fafc" rx="6" ry="6"/>
+  <text x="70" y="175" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Daftar Pegawai</text>
+  
+  <rect x="20" y="200" width="160" height="40" fill="#f8fafc" rx="6" ry="6"/>
+  <text x="70" y="225" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Laporan</text>
+  
+  <rect x="20" y="250" width="160" height="40" fill="#f8fafc" rx="6" ry="6"/>
+  <text x="70" y="275" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Pengaturan</text>
+  
+  <!-- Main content area -->
+  <!-- Title area -->
+  <text x="220" y="95" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#1e293b">Dashboard Overview</text>
+  <text x="220" y="120" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Statistik dan informasi pegawai</text>
+  
+  <!-- Stats Cards -->
+  <rect x="220" y="150" width="170" height="110" fill="#ffffff" rx="8" ry="8" stroke="#e2e8f0" stroke-width="1" filter="url(#shadow)"/>
+  <text x="240" y="180" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Total Pegawai</text>
+  <text x="240" y="215" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#3b82f6">467</text>
+  <text x="240" y="240" font-family="Arial, sans-serif" font-size="12" fill="#64748b">+5% bulan ini</text>
+  
+  <rect x="410" y="150" width="170" height="110" fill="#ffffff" rx="8" ry="8" stroke="#e2e8f0" stroke-width="1" filter="url(#shadow)"/>
+  <text x="430" y="180" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Pegawai Aktif</text>
+  <text x="430" y="215" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#10b981">425</text>
+  <text x="430" y="240" font-family="Arial, sans-serif" font-size="12" fill="#64748b">91% dari total</text>
+  
+  <rect x="600" y="150" width="170" height="110" fill="#ffffff" rx="8" ry="8" stroke="#e2e8f0" stroke-width="1" filter="url(#shadow)"/>
+  <text x="620" y="180" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Pensiun Tahun Ini</text>
+  <text x="620" y="215" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#f59e0b">12</text>
+  <text x="620" y="240" font-family="Arial, sans-serif" font-size="12" fill="#64748b">3 bulan mendatang</text>
+  
+  <!-- Charts Card -->
+  <rect x="220" y="280" width="340" height="200" fill="#ffffff" rx="8" ry="8" stroke="#e2e8f0" stroke-width="1" filter="url(#shadow)"/>
+  
+  <!-- Chart title with proper spacing -->
+  <text x="240" y="300" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1e293b">Distribusi Unit Kerja</text>
+  <text x="240" y="320" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Jumlah pegawai per unit kerja</text>
+  
+  <!-- Background for Y-axis labels -->
+  <rect x="220" y="330" width="25" height="120" fill="#ffffff"/>
+  
+  <!-- Y-axis labels with better positioning -->
+  <text x="235" y="435" font-family="Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="end">0</text>
+  <text x="235" y="405" font-family="Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="end">25</text>
+  <text x="235" y="375" font-family="Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="end">50</text>
+  <text x="235" y="345" font-family="Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="end">75</text>
+  <text x="235" y="335" font-family="Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="end">100</text>
+  
+  <!-- Grid lines with proper spacing -->
+  <line x1="240" y1="430" x2="540" y2="430" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="240" y1="400" x2="540" y2="400" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,2"/>
+  <line x1="240" y1="370" x2="540" y2="370" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,2"/>
+  <line x1="240" y1="340" x2="540" y2="340" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,2"/>
+  
+  <!-- Chart bars with consistent width and properly spaced -->
+  <rect x="260" y="380" width="30" height="50" fill="#4785F4" rx="3" ry="3"/>
+  <rect x="300" y="360" width="30" height="70" fill="#4785F4" rx="3" ry="3"/>
+  <rect x="340" y="340" width="30" height="90" fill="#4785F4" rx="3" ry="3"/>
+  <rect x="380" y="370" width="30" height="60" fill="#4785F4" rx="3" ry="3"/>
+  <rect x="420" y="330" width="30" height="100" fill="#4785F4" rx="3" ry="3"/>
+  <rect x="460" y="380" width="30" height="50" fill="#4785F4" rx="3" ry="3"/>
+  <rect x="500" y="350" width="30" height="80" fill="#4785F4" rx="3" ry="3"/>
+  
+  <!-- X-axis with better spacing -->
+  <line x1="240" y1="430" x2="540" y2="430" stroke="#94a3b8" stroke-width="2"/>
+  <text x="275" y="450" font-family="Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Adm</text>
+  <text x="315" y="450" font-family="Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">TI</text>
+  <text x="355" y="450" font-family="Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">HR</text>
+  <text x="395" y="450" font-family="Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Keu</text>
+  <text x="435" y="450" font-family="Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Ops</text>
+  <text x="475" y="450" font-family="Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Hkm</text>
+  <text x="515" y="450" font-family="Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Log</text>
+  
+  <!-- Table -->
+  <rect x="580" y="280" width="190" height="200" fill="#ffffff" rx="8" ry="8" stroke="#e2e8f0" stroke-width="1" filter="url(#shadow)"/>
+  <text x="600" y="310" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1e293b">Status Pegawai</text>
+  <text x="600" y="330" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Klasifikasi berdasarkan status</text>
+  
+  <!-- Table headers -->
+  <rect x="600" y="340" width="150" height="1" fill="#e2e8f0"/>
+  <text x="600" y="355" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#475569">Status</text>
+  <text x="710" y="355" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#475569">Jumlah</text>
+  
+  <!-- Table rows -->
+  <rect x="600" y="365" width="150" height="1" fill="#e2e8f0"/>
+  <text x="600" y="380" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Tetap</text>
+  <text x="715" y="380" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#3b82f6" text-anchor="middle">378</text>
+  
+  <rect x="600" y="390" width="150" height="1" fill="#e2e8f0"/>
+  <text x="600" y="405" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Kontrak</text>
+  <text x="715" y="405" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#10b981" text-anchor="middle">47</text>
+  
+  <rect x="600" y="415" width="150" height="1" fill="#e2e8f0"/>
+  <text x="600" y="430" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Magang</text>
+  <text x="715" y="430" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#f59e0b" text-anchor="middle">22</text>
+  
+  <rect x="600" y="440" width="150" height="1" fill="#e2e8f0"/>
+  <text x="600" y="455" font-family="Arial, sans-serif" font-size="12" fill="#64748b">Cuti</text>
+  <text x="715" y="455" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#ef4444" text-anchor="middle">8</text>
+</svg> 

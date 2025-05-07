@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Convert SVG to PNG</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    #svgContainer {
+      border: 1px solid #ddd;
+      margin-bottom: 20px;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Convert SVG to PNG</h1>
+    <div id="svgContainer">
+      <!-- SVG will be loaded here -->
+    </div>
+    <button id="downloadBtn">Download as PNG</button>
+  </div>
+
+  <script>
+    // Load the SVG file
+    fetch('dashboard-preview.svg')
+      .then(response => response.text())
+      .then(svgText => {
+        document.getElementById('svgContainer').innerHTML = svgText;
+      });
+
+    // Download as PNG
+    document.getElementById('downloadBtn').addEventListener('click', function() {
+      const svg = document.querySelector('svg');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Set canvas dimensions to match SVG
+      canvas.width = svg.width.baseVal.value;
+      canvas.height = svg.height.baseVal.value;
+      
+      // Create a Blob URL for the SVG
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      
+      // Create an Image element and draw it to the canvas when loaded
+      const img = new Image();
+      img.onload = function() {
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(svgUrl);
+        
+        // Create download link for PNG
+        const pngUrl = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.href = pngUrl;
+        downloadLink.download = 'dashboard-preview.png';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      };
+      
+      img.src = svgUrl;
+    });
+  </script>
+</body>
+</html> 

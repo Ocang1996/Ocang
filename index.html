@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASN Dashboard</title>
+    <!-- Font Intro -->
+    <link href="https://fonts.cdnfonts.com/css/intro" rel="stylesheet">
+    <script>
+      // Immediately check and apply the theme before any rendering occurs
+      (function() {
+        // Check local storage first
+        const savedTheme = localStorage.getItem('theme');
+        
+        if (savedTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else if (savedTheme === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else if (savedTheme === 'system' || !savedTheme) {
+          // If theme is set to system or not set (default), check system preference
+          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+          
+          // Listen for changes in system theme
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (localStorage.getItem('theme') === 'system') {
+              if (event.matches) {
+                document.documentElement.classList.add('dark');
+              } else {
+                document.documentElement.classList.remove('dark');
+              }
+            }
+          });
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
