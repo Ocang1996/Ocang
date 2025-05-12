@@ -336,19 +336,31 @@ export function hasRole(role: string | string[]): boolean {
 }
 
 /**
- * Check if user is admin (admin or superadmin)
+ * Cek apakah user yang login adalah admin atau superadmin
  */
 export function isAdmin(): boolean {
-  const role = localStorage.getItem('userRole');
-  return role === 'admin' || role === 'superadmin';
+  try {
+    // Periksa peran pengguna dari localStorage
+    const role = localStorage.getItem('userRole');
+    return role === 'admin' || role === 'superadmin';
+  } catch (e) {
+    console.error('Error checking admin status:', e);
+    return false; // Default ke false jika terjadi error
+  }
 }
 
 /**
- * Check if user is superadmin
+ * Cek apakah user yang login adalah superadmin
  */
 export function isSuperAdmin(): boolean {
-  const role = localStorage.getItem('userRole');
-  return role === 'superadmin';
+  try {
+    // Periksa peran pengguna dari localStorage
+    const role = localStorage.getItem('userRole');
+    return role === 'superadmin';
+  } catch (e) {
+    console.error('Error checking superadmin status:', e);
+    return false; // Default ke false jika terjadi error
+  }
 }
 
 /**
@@ -682,7 +694,8 @@ export function changeUsername(currentPassword: string, newUsername: string): { 
     try {
       const userProfile = localStorage.getItem('user_profile');
       if (userProfile) {
-        const profileData = JSON.parse(userProfile);
+        // Parse user profile data for reference
+        // const profileData = JSON.parse(userProfile); - Not used currently
         
         // Simpan username lama untuk referensi di tempat lain
         localStorage.setItem('previous_username', currentUsername);
@@ -739,7 +752,8 @@ export function changeUsername(currentPassword: string, newUsername: string): { 
 export function cleanupInvalidCredentials(): { cleaned: number, remaining: number } {
   try {
     const customCredentials = getCustomCredentials();
-    const originalCount = Object.keys(customCredentials).length;
+    // Commented out unused variable
+    // const originalCount = Object.keys(customCredentials).length;
     const validUsernames: string[] = [];
     
     // Tambahkan default users
@@ -787,7 +801,17 @@ export function cleanupInvalidCredentials(): { cleaned: number, remaining: numbe
  * Fungsi untuk menampilkan informasi debug tentang kredensial yang tersimpan
  * @returns Object dengan informasi kredensial
  */
-export function getCredentialsDebugInfo(): any {
+interface CredentialsDebugInfo {
+  customCredentialsCount: number;
+  customCredentialsList: string[];
+  registeredUsersCount: number;
+  registeredUsersList: string[];
+  deletedUsersCount: number;
+  deletedUsersList: string[];
+  error?: string;
+}
+
+export function getCredentialsDebugInfo(): CredentialsDebugInfo {
   try {
     const customCredentials = getCustomCredentials();
     const registeredUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
@@ -797,13 +821,21 @@ export function getCredentialsDebugInfo(): any {
       customCredentialsCount: Object.keys(customCredentials).length,
       customCredentialsList: Object.keys(customCredentials),
       registeredUsersCount: registeredUsers.length,
-      registeredUsersList: registeredUsers.map((user: any) => user.username),
+      registeredUsersList: registeredUsers.map((user: { username: string }) => user.username),
       deletedUsersCount: deletedUsers.length,
       deletedUsersList: deletedUsers
     };
   } catch (e) {
     console.error('Error getting credentials debug info:', e);
-    return { error: 'Error getting credentials debug info' };
+    return {
+      customCredentialsCount: 0,
+      customCredentialsList: [],
+      registeredUsersCount: 0,
+      registeredUsersList: [],
+      deletedUsersCount: 0,
+      deletedUsersList: [],
+      error: 'Error getting credentials debug info'
+    };
   }
 }
 
@@ -852,7 +884,15 @@ export function resetAllData(): { success: boolean; message: string } {
 /**
  * Update user profile data in localStorage
  */
-export function updateUserProfile(profileData: any): void {
+export interface UserProfileData {
+  name?: string;
+  email?: string;
+  avatar?: string;
+  preferences?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export function updateUserProfile(profileData: UserProfileData): void {
   try {
     // Get existing profile data
     const existingProfileJson = localStorage.getItem('user_profile');
@@ -886,7 +926,7 @@ export function updateUserProfile(profileData: any): void {
 /**
  * Get user profile data from localStorage
  */
-export function getUserProfile(): any {
+export function getUserProfile(): UserProfileData | null {
   try {
     const profileJson = localStorage.getItem('user_profile');
     let profileData = null;

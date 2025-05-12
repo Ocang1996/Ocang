@@ -6,32 +6,48 @@ import {
   FileText, 
   Settings, 
   LogOut, 
-  User, 
   Bell, 
   Menu, 
   X,
-  HelpCircle
+  HelpCircle,
+  Briefcase
 } from 'lucide-react';
-import { UserRole } from '../../types/auth';
+
 import { useTheme } from '../../lib/ThemeContext';
 import { useTranslation } from '../../lib/useTranslation';
+import { useEmployees } from '../../lib/EmployeeContext';
+import { useSidebar } from '../../lib/SidebarContext';
+import LeaveSidebar from '../leave/LeaveSidebar';
 
 interface SidebarProps {
   onLogout: () => void;
   activeItem?: string;
-  userRole?: UserRole;
+  onExpandChange?: (expanded: boolean) => void;
 }
 
-const Sidebar = ({ onLogout, activeItem = 'dashboard', userRole = 'user' }: SidebarProps) => {
+const Sidebar = ({ onLogout }: SidebarProps) => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isDark, language, profilePhoto } = useTheme();
+  const { language, profilePhoto } = useTheme();
   const { t } = useTranslation();
+  const { selectedEmployee } = useEmployees();
+  const { expanded, setExpanded } = useSidebar();
   
   // For re-render when language changes
   const [, setRefreshKey] = useState(0);
   
   const username = localStorage.getItem('username') || 'Admin';
+  
+  // Get current employee info for leave sidebar
+  const currentEmployeeId = selectedEmployee?.id || localStorage.getItem('employeeId');
+  const currentEmployeeName = selectedEmployee?.name || localStorage.getItem('employeeName') || username;
+  
+  // Handle sidebar expansion - dengan trigger yang lebih kuat untuk refresh state
+  const handleExpand = (expand: boolean) => {
+    setExpanded(expand);
+    // Force refresh localStorage dan trigger re-render di seluruh aplikasi
+    localStorage.setItem('sidebarExpanded', expand ? 'true' : 'false');
+  };
   
   // Observer for dark mode changes
   useEffect(() => {
@@ -57,6 +73,7 @@ const Sidebar = ({ onLogout, activeItem = 'dashboard', userRole = 'user' }: Side
     { path: '/dashboard', name: t('nav_dashboard'), icon: <LayoutDashboard size={20} /> },
     { path: '/employees', name: t('nav_employees'), icon: <Users size={20} /> },
     { path: '/reports', name: t('nav_reports'), icon: <FileText size={20} /> },
+    { path: '/leave', name: t('nav_leave'), icon: <Briefcase size={20} /> },
     { path: '/settings', name: t('nav_settings'), icon: <Settings size={20} /> },
     { path: '/help', name: t('nav_help'), icon: <HelpCircle size={20} /> },
   ];
@@ -86,7 +103,6 @@ const Sidebar = ({ onLogout, activeItem = 'dashboard', userRole = 'user' }: Side
         <div className="flex items-center space-x-3">
           <button className="p-2 bg-white/80 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300 rounded-full hover:bg-emerald-100/50 dark:hover:bg-emerald-900/20 relative">
             <Bell size={18} />
-            <span className="absolute top-0 right-0 w-2 h-2 bg-emerald-500 rounded-full"></span>
           </button>
           <Link to="/profile" className="p-1 text-gray-600 dark:text-gray-300 rounded-full hover:bg-emerald-100/50 dark:hover:bg-emerald-900/20">
             <div className="w-7 h-7 rounded-full overflow-hidden bg-emerald-500 flex items-center justify-center text-white font-medium">
@@ -128,9 +144,6 @@ const Sidebar = ({ onLogout, activeItem = 'dashboard', userRole = 'user' }: Side
                       {item.icon}
                     </div>
                     <span className="ml-3">{item.name}</span>
-                    {isActive(item.path) && (
-                      <span className="ml-auto w-3 h-3 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
-                    )}
                   </Link>
                 </li>
               ))}
@@ -154,64 +167,135 @@ const Sidebar = ({ onLogout, activeItem = 'dashboard', userRole = 'user' }: Side
         </div>
       </div>
 
-      {/* Desktop Fixed-width Sidebar with Tooltips */}
+      {/* Employee Leave Widget for Desktop */}
+      {currentEmployeeId && location.pathname !== '/leave' && (
+        <div className="hidden lg:block fixed right-6 top-1/2 -translate-y-1/2 z-10 w-72">
+          <LeaveSidebar 
+            employeeId={currentEmployeeId} 
+            employeeName={currentEmployeeName} 
+          />
+        </div>
+      )}
+      
+      {/* Desktop Responsive Sidebar */}
       <aside
-        className="hidden lg:flex flex-col fixed left-6 top-1/2 -translate-y-1/2 z-30 w-16"
+        className={`hidden lg:flex flex-col fixed left-6 top-1/2 -translate-y-1/2 z-30 ${expanded ? 'w-56' : 'w-16'} transition-all duration-400 ease-out transform-gpu`}
       >
-        <div className="py-6 px-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg border border-gray-200/30 dark:border-gray-700/30 rounded-2xl shadow-lg">
+        <div className="py-6 px-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg border border-gray-200/30 dark:border-gray-700/30 rounded-2xl shadow-lg transition-shadow duration-400 ease-out hover:shadow-xl">
           <div className="flex flex-col items-center space-y-2">
-            <div className="mb-4 text-center">
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-emerald-500 flex items-center justify-center text-white">
-              {profilePhoto ? (
-                <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <span>{username.charAt(0).toUpperCase()}</span>
-              )}
+            <div className="mb-4 text-center w-full flex items-center justify-between">
+              <div className="flex items-center">
+                <div 
+                  className="w-10 h-10 rounded-full overflow-hidden bg-emerald-500 flex items-center justify-center text-white"
+                >
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{username.charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                {expanded && (
+                  <span className="ml-3 text-gray-800 dark:text-gray-200 font-medium overflow-hidden whitespace-nowrap transition-all">{username}</span>
+                )}
               </div>
+              {expanded && (
+                <button 
+                  onClick={() => handleExpand(false)}
+                  className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
             
             {navItems.map((item) => (
-              <Link
+              <div 
                 key={item.path}
-                to={item.path}
-                className={`group relative flex items-center justify-center w-10 h-10 rounded-full 
-                ${isActive(item.path) 
-                  ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30' 
-                  : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 hover:text-emerald-600 dark:hover:text-emerald-400'
-                }`}
-                title={item.name}
+                className="relative w-full"
               >
-                {item.icon}
-                
-                {/* Active Indicator */}
-                {isActive(item.path) && (
-                  <div className="absolute -right-1 transform translate-x-1/2">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/70 dark:bg-emerald-400/70 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-white dark:bg-emerald-300 shadow-md shadow-emerald-500/30 dark:shadow-emerald-500/50"></span>
+                {!expanded ? (
+                  // Compact view - navigates properly using react-router
+                  <Link
+                    to={item.path}
+                    onClick={() => {
+                      // Saat icon di sidebar diklik dalam keadaan collapsed, 
+                      // kita akan expand sidebar untuk semua menu
+                      handleExpand(true);
+                    }}
+                    className={`group cursor-pointer flex items-center justify-center w-10 h-10 rounded-full
+                    ${isActive(item.path) 
+                      ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30' 
+                      : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 hover:text-emerald-600 dark:hover:text-emerald-400'
+                    } transition-all duration-300`}
+                    title={item.name}
+                  >
+                    <div className="flex items-center justify-center">
+                      {item.icon}
+                    </div>
+                    
+                    {/* Tooltip */}
+                    <span className="absolute left-14 px-2.5 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 shadow-md transition-opacity duration-200 pointer-events-none">
+                      {item.name}
                     </span>
-                  </div>
+                  </Link>
+                ) : (
+                  // Expanded view - clicking navigates to the page
+                  <Link
+                    to={item.path}
+                    onClick={() => {
+                      // Jika menu yang diklik adalah menu yang aktif (sedang dibuka),
+                      // tutup sidebar, jika tidak biarkan tetap terbuka
+                      if (isActive(item.path)) {
+                        handleExpand(false);
+                      }
+                    }}
+                    className={`flex items-center justify-start w-full px-2.5 h-10 rounded-xl
+                    ${isActive(item.path) 
+                      ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30' 
+                      : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 hover:text-emerald-600 dark:hover:text-emerald-400'
+                    } transition-all duration-300`}
+                  >
+                    <div className="flex items-center justify-center min-w-[28px]">
+                      {item.icon}
+                    </div>
+                    
+                    <span className="ml-3 text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-400 ease-out">{item.name}</span>
+                  </Link>
                 )}
-                
-                {/* Tooltip */}
-                <span className="absolute left-14 px-2.5 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 shadow-md transition-opacity duration-200 pointer-events-none">
-                  {item.name}
-                </span>
-              </Link>
+              </div>
             ))}
             
-            <button
-              onClick={onLogout}
-              className="group relative flex items-center justify-center w-10 h-10 mt-4 rounded-full bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
-              title={t('logout')}
-            >
-              <LogOut size={18} />
-              
-              {/* Tooltip */}
-              <span className="absolute left-14 px-2.5 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 shadow-md transition-opacity duration-200 pointer-events-none">
-                {t('logout')}
-              </span>
-            </button>
+            <div className="relative w-full mt-4">
+              {!expanded ? (
+                <div
+                  onClick={() => handleExpand(true)}
+                  className="group cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all duration-300"
+                  title={t('logout')}
+                >
+                  <LogOut size={18} />
+                  
+                  {/* Tooltip */}
+                  <span className="absolute left-14 px-2.5 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 shadow-md transition-opacity duration-200 pointer-events-none">
+                    {t('logout')}
+                  </span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    onLogout();
+                    // Tutup sidebar setelah logout
+                    setTimeout(() => handleExpand(false), 100);
+                  }}
+                  className="flex items-center justify-start w-full px-2.5 h-10 rounded-xl bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all duration-300"
+                >
+                  <div className="flex items-center justify-center min-w-[28px]">
+                    <LogOut size={18} />
+                  </div>
+                  
+                  <span className="ml-3 text-sm font-medium whitespace-nowrap overflow-hidden transition-all">{t('logout')}</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </aside>

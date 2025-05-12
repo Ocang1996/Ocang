@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, Suspense, Component, ErrorInfo, ReactNode } from 'react';
+import { useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { 
   Chart as ChartJS,
@@ -12,7 +12,6 @@ import {
 import { ArrowUpRight, Briefcase, X } from 'lucide-react';
 import { formatNumber } from '../../lib/utils';
 import { useTheme } from '../../lib/ThemeContext';
-import { useTranslation } from '../../lib/useTranslation';
 
 // Register ChartJS components
 ChartJS.register(
@@ -39,24 +38,19 @@ interface PositionDistributionChartProps {
 // Detail Panel Component
 const DetailPanel = ({ 
   position, 
-  onClose 
+  onClose,
+  positionIndex
 }: { 
   position: PositionData, 
-  onClose: () => void 
+  onClose: () => void,
+  positionIndex: number
 }) => {
-  const { isDark, language } = useTheme();
-  const { t } = useTranslation();
-  const total = position.count;
+  const { language } = useTheme();
   
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto" onClick={onClose}>
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true"></div>
-        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div 
-          className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
-          onClick={(e) => e.stopPropagation()}
-        >
+    <div className="mt-2 z-40 w-full overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700" 
+         onClick={(e) => e.stopPropagation()}
+    >
           <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
               <Briefcase className="mr-2 h-5 w-5 text-emerald-500 dark:text-emerald-400" />
@@ -121,31 +115,29 @@ const DetailPanel = ({
             )}
           </div>
           
-          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-right">
+          <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-right">
             <button
               type="button"
-              className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 dark:focus:ring-offset-gray-800"
+              className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors focus:outline-none"
               onClick={onClose}
             >
               {language === 'id' ? 'Tutup' : 'Close'}
             </button>
           </div>
-        </div>
-      </div>
     </div>
   );
 };
 
 const PositionDistributionChart = ({ data, onViewDetails }: PositionDistributionChartProps) => {
   const { isDark, language } = useTheme();
-  const { t } = useTranslation();
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   
   const labels = data.map(item => item.type);
   const values = data.map(item => item.count);
-  const total = values.reduce((sum, value) => sum + value, 0);
+  // Calculate total count of all positions
+  const total = data.reduce((acc, item) => acc + item.count, 0);
   
   // Basic colors for each position type - menggunakan warna simpel yang mirip dengan versi sebelumnya
   const positionColors = [
@@ -224,7 +216,7 @@ const PositionDistributionChart = ({ data, onViewDetails }: PositionDistribution
         }
       }
     },
-    onClick: (event: any, elements: any) => {
+    onClick: (_event: any, elements: any) => {
       if (elements && elements.length > 0) {
         const index = elements[0].index;
         const positionType = data[index].type;
@@ -232,7 +224,7 @@ const PositionDistributionChart = ({ data, onViewDetails }: PositionDistribution
         setShowDetail(true);
       }
     },
-    onHover: (event: any, elements: any) => {
+    onHover: (_event: any, elements: any) => {
       if (elements && elements.length > 0) {
         setHoveredIndex(elements[0].index);
       } else {
@@ -241,14 +233,10 @@ const PositionDistributionChart = ({ data, onViewDetails }: PositionDistribution
     }
   };
   
-  // Get selected position details
-  const getSelectedPositionDetails = () => {
-    if (!selectedPosition) return null;
-    return data.find(item => item.type === selectedPosition);
-  };
+  // Selected position should be highlighted in UI
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden h-full flex flex-col">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden h-full flex flex-col relative">
       <div className="p-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -269,7 +257,7 @@ const PositionDistributionChart = ({ data, onViewDetails }: PositionDistribution
         </div>
       </div>
       
-      <div className="p-4 flex-1">
+      <div className="p-4 flex-1 relative">
         <div className="h-60 mb-4 relative">
           <Bar 
             data={chartData} 
@@ -293,52 +281,62 @@ const PositionDistributionChart = ({ data, onViewDetails }: PositionDistribution
             {data.map((position, i) => {
               const percentage = ((position.count / total) * 100).toFixed(1);
               const isHovered = hoveredIndex === i;
+              const isSelected = selectedPosition === position.type;
               
               return (
-                <div 
-                  key={i}
-                  className={`p-3 rounded-lg cursor-pointer transition-all duration-150 border ${
-                    isHovered 
-                      ? 'bg-gray-50 dark:bg-gray-700 shadow-sm border-gray-200 dark:border-gray-600' 
-                      : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
-                  onClick={() => {
-                    setSelectedPosition(position.type);
-                    setShowDetail(true);
-                  }}
-                  onMouseEnter={() => setHoveredIndex(i)}
-                  onMouseLeave={() => setHoveredIndex(null)}
-                >
-                  <div className="flex items-center mb-2">
-                    <div 
-                      className="w-3 h-3 rounded-full mr-2"
-                      style={{ backgroundColor: positionColors[i % positionColors.length] }}
-                    ></div>
-                    <span className="font-medium text-gray-800 dark:text-white truncate">
-                      {position.type}
-                    </span>
+                <div key={i}>
+                  <div 
+                    className={`p-3 rounded-lg cursor-pointer transition-all duration-150 border ${
+                      isSelected
+                        ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700' 
+                        : isHovered 
+                          ? 'bg-gray-50 dark:bg-gray-700 shadow-sm border-gray-200 dark:border-gray-600' 
+                          : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                    onClick={() => {
+                      // Toggle detail if clicking the same position again
+                      if (selectedPosition === position.type) {
+                        setShowDetail(!showDetail);
+                      } else {
+                        setSelectedPosition(position.type);
+                        setShowDetail(true); 
+                      }
+                    }}
+                    onMouseEnter={() => setHoveredIndex(i)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                  >
+                    <div className="flex items-center mb-2">
+                      <div 
+                        className="w-3 h-3 rounded-full mr-2"
+                        style={{ backgroundColor: positionColors[i % positionColors.length] }}
+                      ></div>
+                      <span className="font-medium text-gray-800 dark:text-white truncate">
+                        {position.type}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-xl font-bold text-gray-900 dark:text-white">
+                        {formatNumber(position.count)}
+                      </span>
+                      <span className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400">
+                        {percentage}%
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-xl font-bold text-gray-900 dark:text-white">
-                      {formatNumber(position.count)}
-                    </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {percentage}%
-                    </span>
-                  </div>
+                  
+                  {showDetail && selectedPosition === position.type && (
+                    <DetailPanel 
+                      position={position} 
+                      onClose={() => setShowDetail(false)}
+                      positionIndex={i}
+                    />
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
       </div>
-      
-      {showDetail && selectedPosition && (
-        <DetailPanel 
-          position={data.find(item => item.type === selectedPosition)!} 
-          onClose={() => setShowDetail(false)}
-        />
-      )}
     </div>
   );
 };

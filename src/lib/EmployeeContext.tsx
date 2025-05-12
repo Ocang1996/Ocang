@@ -28,6 +28,10 @@ export interface Employee {
   notes?: string;
   updatedAt?: string;
   createdAt?: string;
+  // Added properties needed in other components
+  appointmentDate?: string; // TMT Pengangkatan untuk ASN
+  joinDate?: string; // Tanggal masuk kerja untuk NON ASN
+  jobType?: string; // Jenis Jabatan (needed for retirement calculations)
 }
 
 // Mock data for employees when API is not available
@@ -203,7 +207,7 @@ class EmployeeDataSync {
   }
   
   // Simplified subscribe method
-  subscribe(callback: () => void) {
+  subscribe(_: () => void) {
     return () => {};
   }
   

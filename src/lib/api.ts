@@ -1,17 +1,27 @@
 import { API_CONFIG } from './config';
 
+/**
+ * Standard API response interface
+ */
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  errors?: any;
+}
+
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // Simulated mock API responses
 const mock = {
-  get: async <T>(endpoint: string): Promise<T> => {
+  get: async <T>(_path: string): Promise<T> => {
     // Simulate network delay
     await delay(500);
     
-    // Simple mock data based on endpoint
-    if (endpoint.includes('/employees')) {
+    // Simple mock data based on path
+    if (_path.includes('/employees')) {
       return {
         data: [],
         total: 0,
@@ -24,21 +34,21 @@ const mock = {
     return {} as T;
   },
   
-  post: async <T>(endpoint: string, data: any): Promise<T> => {
+  post: async <T>(_path: string, data: any): Promise<T> => {
     await delay(500);
     return { ...data, id: Date.now().toString() } as unknown as T;
   },
   
-  put: async <T>(endpoint: string, data: any): Promise<T> => {
+  put: async <T>(_path: string, data: any): Promise<T> => {
     await delay(500);
     return data as unknown as T;
   },
   
-  delete: async (endpoint: string): Promise<void> => {
+  delete: async (_path: string): Promise<void> => {
     await delay(500);
   },
   
-  upload: async <T>(endpoint: string, formData: FormData): Promise<T> => {
+  upload: async <T>(_path: string, _data: FormData): Promise<T> => {
     await delay(1000);
     return { photoUrl: 'https://example.com/photo.jpg' } as unknown as T;
   }
@@ -216,6 +226,43 @@ const api = {
   }
 };
 
+/**
+ * Sends a password reset request to the email
+ * @param email User's email address
+ * @returns Promise with response data
+ */
+export const forgotPassword = async (email: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await api.post<{ success: boolean; message: string }>(
+      API_CONFIG.ENDPOINTS.AUTH.FORGOT_PASSWORD,
+      { email }
+    );
+    return response;
+  } catch (error) {
+    console.error('Failed to send password reset request:', error);
+    throw error;
+  }
+};
+
+/**
+ * Resets user password using token
+ * @param token Reset token received in email
+ * @param newPassword New password
+ * @returns Promise with response data
+ */
+export const resetPassword = async (token: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await api.post<{ success: boolean; message: string }>(
+      API_CONFIG.ENDPOINTS.AUTH.RESET_PASSWORD,
+      { token, newPassword }
+    );
+    return response;
+  } catch (error) {
+    console.error('Failed to reset password:', error);
+    throw error;
+  }
+};
+
 export default api;
 
 interface RegisterUserData {
@@ -225,19 +272,31 @@ interface RegisterUserData {
   name: string;
 }
 
-export async function registerUser(userData: RegisterUserData): Promise<ApiResponse> {
+/**
+ * Register a new user
+ * @param data User registration data
+ * @returns Promise with registration response
+ */
+export async function registerUser(data: RegisterUserData): Promise<ApiResponse> {
   try {
-    // For development/demo purposes, simulate a successful registration
-    // In production, this would be a real API call
-    return {
-      success: true,
-      message: 'Registration successful! You can now login with your credentials.'
-    };
-    
-    // Uncomment for real API implementation
-    // const response = await api.post(API_CONFIG.ENDPOINTS.AUTH.REGISTER, userData);
-    // return response;
+    // In production, use real API call
+    if (API_CONFIG.USE_BACKEND) {
+      const response = await api.post<ApiResponse>(API_CONFIG.ENDPOINTS.AUTH.REGISTER, data);
+      return response;
+    } else {
+      // Simulated registration logic for development/demo
+      await delay(800); // Simulate network delay
+      return {
+        success: true,
+        message: 'Registration successful',
+        data: {
+          id: Date.now().toString(),
+          ...data
+        }
+      };
+    }
   } catch (error: any) {
+    console.error('Registration failed:', error);
     return {
       success: false,
       message: error.message || 'Registration failed. Please try again.'

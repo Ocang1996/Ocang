@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import User, { IUser, UserRole } from '../models/User.js';
+import User, { IUser, UserRole } from '../models/User';
 import { authMiddleware, adminAuthMiddleware, superAdminAuthMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();

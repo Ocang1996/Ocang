@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ArrowRight, Users, BarChart3, Award, ShieldCheck } from 'lucide-react';
+import { ChevronRight, ArrowRight, Users, BarChart3, Award, ShieldCheck, CalendarCheck } from 'lucide-react';
 import { useTheme } from '../../lib/ThemeContext';
 import { useTranslation } from '../../lib/useTranslation';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
 
 // Custom CSS untuk animasi
 const animationStyles = `
@@ -112,6 +113,16 @@ const animationStyles = `
   .bar-6 { animation: barHeight6 10.5s infinite; }
 `;
 
+// Pie chart color palette (hanya emerald gradient)
+const pieColors = [
+  'url(#pieGradEmerald1)',
+  'url(#pieGradEmerald2)',
+  'url(#pieGradEmerald3)',
+  'url(#pieGradEmerald4)',
+  'url(#pieGradEmerald5)',
+  'url(#pieGradEmerald6)'
+];
+
 const LandingPage = () => {
   const [scrollY, setScrollY] = useState(0);
   const [showMockNotice, setShowMockNotice] = useState(false);
@@ -130,12 +141,12 @@ const LandingPage = () => {
   
   // State untuk nilai distribusi unit kerja
   const [unitData, setUnitData] = useState([
-    { name: "Sekr", value: 68 },
-    { name: "Dep 1", value: 85 },
-    { name: "Dep 2", value: 60 },
-    { name: "Dep 3", value: 95 },
-    { name: "Insp", value: 45 },
-    { name: "Pusat", value: 38 }
+    { name: "Sekr", value: 85 },
+    { name: "Dep 1", value: 95 },
+    { name: "Dep 2", value: 78 },
+    { name: "Dep 3", value: 90 },
+    { name: "Insp", value: 70 },
+    { name: "Pusat", value: 65 }
   ]);
   
   // Timer untuk update simulasi data real-time
@@ -205,23 +216,28 @@ const LandingPage = () => {
   const features = [
     {
       icon: <Users className="h-12 w-12 text-emerald-600" />,
-      title: 'Manajemen Pegawai',
-      description: 'Kelola data pegawai dengan sistem yang terintegrasi'
+      title: language === 'id' ? 'Manajemen Pegawai' : 'Employee Management',
+      description: language === 'id' ? 'Kelola data pegawai dengan sistem yang terintegrasi' : 'Manage employee data with an integrated system'
     },
     {
       icon: <BarChart3 className="h-12 w-12 text-emerald-600" />,
-      title: 'Dashboard Interaktif',
-      description: 'Visualisasi data pegawai yang komprehensif dan real-time untuk mendukung pengambilan keputusan'
+      title: language === 'id' ? 'Dashboard Interaktif' : 'Interactive Dashboard',
+      description: language === 'id' ? 'Visualisasi data pegawai yang komprehensif dan real-time untuk mendukung pengambilan keputusan' : 'Comprehensive and real-time employee data visualization to support decision making'
     },
     {
       icon: <Award className="h-12 w-12 text-emerald-600" />,
-      title: 'Analisis Kepegawaian',
-      description: 'Analisis distribusi pegawai berdasarkan jabatan, pendidikan, pangkat, dan demografis'
+      title: language === 'id' ? 'Analisis Kepegawaian' : 'Employee Analytics',
+      description: language === 'id' ? 'Analisis distribusi pegawai berdasarkan jabatan, pendidikan, pangkat, dan demografis' : 'Analysis of employee distribution based on position, education, rank, and demographics'
+    },
+    {
+      icon: <CalendarCheck className="h-12 w-12 text-emerald-600" />,
+      title: language === 'id' ? 'Data Cuti Pegawai' : 'Employee Leave Data',
+      description: language === 'id' ? 'Pengelolaan data cuti pegawai yang efisien dengan notifikasi dan pelacakan status' : 'Efficient employee leave data management with notifications and status tracking'
     },
     {
       icon: <ShieldCheck className="h-12 w-12 text-emerald-600" />,
-      title: 'Multi-level Akses',
-      description: 'Sistem keamanan dengan tiga level akses: Superadmin, Admin, dan User'
+      title: language === 'id' ? 'Multi-level Akses' : 'Multi-level Access',
+      description: language === 'id' ? 'Sistem keamanan dengan tiga level akses: Superadmin, Admin, dan User' : 'Security system with three access levels: Superadmin, Admin, and User'
     }
   ];
 
@@ -256,17 +272,62 @@ const LandingPage = () => {
       <div className="grid grid-cols-2 gap-4">
         <div className="dashboard-card bg-white p-4 rounded-lg shadow">
           <p className="text-sm font-medium text-gray-700 mb-2">Distribusi Unit Kerja</p>
-          <div className="h-40 flex items-end justify-around">
-            {unitData.map((unit, index) => (
-              <div key={index} className="flex flex-col items-center">
-                <div 
-                  className={`w-6 rounded-t-sm bg-emerald-500 opacity-90 bar-${index + 1}`} 
-                  style={{ height: `${unit.value}%` }}
-                ></div>
-                <div className="text-xs text-gray-600 mt-1">{unit.name}</div>
-                <div className="text-xs text-emerald-700 font-medium">{unit.value}</div>
-              </div>
-            ))}
+          {/* Pie Chart Visual */}
+          <div className="w-full h-56 flex flex-col items-center justify-center mb-2">
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie
+                  data={unitData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={44}
+                  outerRadius={70}
+                  fill="#10b981"
+                  paddingAngle={3}
+                  label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                    // posisi label di luar pie
+                    const RADIAN = Math.PI / 180;
+                    const radius = outerRadius + 18;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="#065f46"
+                        textAnchor={x > cx ? 'start' : 'end'}
+                        dominantBaseline="central"
+                        fontSize={12}
+                        fontWeight={600}
+                        style={{ textShadow: '0 1px 2px #fff8' }}
+                      >
+                        {`${(percent * 100).toFixed(0)}%`}
+                      </text>
+                    );
+                  }}
+                  labelLine={true}
+                  isAnimationActive={true}
+                  animationBegin={0}
+                  animationDuration={900}
+                  stroke="#fff"
+                  strokeWidth={2}
+                >
+                  {unitData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value, name) => [`${value}`, `${name}`]} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="flex flex-wrap justify-center gap-4 mt-2">
+              {unitData.map((entry, idx) => (
+                <div key={idx} className="flex flex-col items-center text-xs">
+                  <span className="font-semibold text-emerald-700">{entry.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         
@@ -332,6 +393,7 @@ const LandingPage = () => {
       {/* Navigation Bar */}
       <nav className="relative z-10 px-6 py-4 flex justify-between items-center">
         <div className="flex items-center">
+          {/* Logo dihapus sementara */}
           <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">EmpDash</span>
         </div>
         <div className="flex items-center gap-4">
@@ -433,17 +495,17 @@ const LandingPage = () => {
             </p>
           </div>
           <div className="mx-auto mt-12 max-w-7xl sm:mt-16 lg:mt-20">
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-3 lg:grid-cols-5">
               {features.map((feature, index) => (
                 <div 
                   key={index} 
-                  className="flex flex-col items-start bg-white rounded-xl p-8 shadow-sm hover:shadow-lg transition-shadow border border-emerald-100"
+                  className="flex flex-col items-center text-center bg-white rounded-xl p-4 md:p-6 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 duration-300 border border-emerald-100 h-full"
                 >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-emerald-50 mb-5">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 mb-3 mx-auto">
                     {feature.icon}
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{feature.title}</h3>
+                  <p className="text-sm text-gray-600 line-clamp-3">{feature.description}</p>
                 </div>
               ))}
             </div>
@@ -548,6 +610,36 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
+
+      {/* Tambahkan SVG gradient emerald di dalam komponen utama (sebelum return) */}
+      <svg width="0" height="0">
+        <defs>
+          <linearGradient id="pieGradEmerald1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#34d399" />
+          </linearGradient>
+          <linearGradient id="pieGradEmerald2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#059669" />
+            <stop offset="100%" stopColor="#6ee7b7" />
+          </linearGradient>
+          <linearGradient id="pieGradEmerald3" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#34d399" />
+            <stop offset="100%" stopColor="#10b981" />
+          </linearGradient>
+          <linearGradient id="pieGradEmerald4" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#6ee7b7" />
+            <stop offset="100%" stopColor="#059669" />
+          </linearGradient>
+          <linearGradient id="pieGradEmerald5" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#059669" />
+          </linearGradient>
+          <linearGradient id="pieGradEmerald6" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#34d399" />
+            <stop offset="100%" stopColor="#6ee7b7" />
+          </linearGradient>
+        </defs>
+      </svg>
     </div>
   );
 };

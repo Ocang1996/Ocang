@@ -36,29 +36,18 @@ interface AsnEmployee {
   age: number;
   employeeType: 'PNS' | 'PPPK';
   gender: 'L' | 'P';
-  category: 'administrasi' | 'fungsionalPertamaMuda' | 'fungsionalKeterampilan' | 'penelitiPerekayasaPertamaMuda' | 'pimpinanTinggi' | 'fungsionalMadya' | 'fungsionalUtama';
+  category: 'administrasi' | 'fungsionalPertamaMuda' | 'fungsionalKeterampilan' | 'pimpinanTinggi' | 'fungsionalMadya' | 'fungsionalUtama';
 }
 
 // Data berdasarkan jenis jabatan dan BUP
 interface RetirementDataByPosition {
-  // BUP 58 tahun
   administrasi: number[];
   fungsionalPertamaMuda: number[];
   fungsionalKeterampilan: number[];
-  penelitiPerekayasaPertamaMuda: number[];
-  
-  // BUP 60 tahun
   pimpinanTinggi: number[];
   fungsionalMadya: number[];
-  
-  // BUP 65 tahun
   fungsionalUtama: number[];
-  
-  // Tahun-tahun untuk prediksi
   years: number[];
-  
-  // Data pegawai per kategori per tahun
-  // Format: employeeData[year][category] = employee[]
   employeeData?: Record<number, Record<string, AsnEmployee[]>>;
 }
 
@@ -99,8 +88,7 @@ const RetirementBupChart = ({ data, onViewDetails }: RetirementBupChartProps) =>
   const bup58Data = Array.from({ length: data.years.length }, (_, i) => 
     data.administrasi[i] + 
     data.fungsionalPertamaMuda[i] + 
-    data.fungsionalKeterampilan[i] + 
-    data.penelitiPerekayasaPertamaMuda[i]
+    data.fungsionalKeterampilan[i]
   );
   
   const bup60Data = Array.from({ length: data.years.length }, (_, i) => 
@@ -376,7 +364,6 @@ const RetirementBupChart = ({ data, onViewDetails }: RetirementBupChartProps) =>
     const administrasiCount = data.administrasi[idx];
     const fungsionalPertamaMudaCount = data.fungsionalPertamaMuda[idx];
     const fungsionalKeterampilanCount = data.fungsionalKeterampilan[idx];
-    const penelitiPerekayasaCount = data.penelitiPerekayasaPertamaMuda[idx];
     const pimpinanTinggiCount = data.pimpinanTinggi[idx];
     const fungsionalMadyaCount = data.fungsionalMadya[idx];
     const fungsionalUtamaCount = data.fungsionalUtama[idx];
@@ -476,20 +463,6 @@ const RetirementBupChart = ({ data, onViewDetails }: RetirementBupChartProps) =>
                       <button 
                         className="ml-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline" 
                         onClick={() => setSelectedCategory('fungsionalKeterampilan')}
-                      >
-                        {language === 'id' ? 'Lihat' : 'View'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Peneliti/Perekayasa (P/M)</span>
-                  <div className="flex items-center">
-                    <span className="font-medium text-gray-800 dark:text-white">{formatNumber(penelitiPerekayasaCount)}</span>
-                    {hasEmployeeData && (
-                      <button 
-                        className="ml-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline" 
-                        onClick={() => setSelectedCategory('penelitiPerekayasaPertamaMuda')}
                       >
                         {language === 'id' ? 'Lihat' : 'View'}
                       </button>

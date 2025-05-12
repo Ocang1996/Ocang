@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, Check, User } from 'lucide-react';
 import { compressImage, validateImageFile } from '../../lib/imageUtils';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { registerLocale } from 'react-datepicker';
+import { id } from 'date-fns/locale/id';
+registerLocale('id', id);
 
 interface EditEmployeeFormProps {
   employee: any;
@@ -15,6 +20,8 @@ const EditEmployeeForm = ({ employee, onClose, onSubmit }: EditEmployeeFormProps
     gender: 'male',
     birthDate: '',
     employeeType: 'pns',
+    joinDate: '',
+    appointmentDate: '',
     workUnit: '',
     position: '',
     rank: '',
@@ -29,7 +36,8 @@ const EditEmployeeForm = ({ employee, onClose, onSubmit }: EditEmployeeFormProps
     photo: null as File | null,
     status: 'Aktif',
     positionHistory: '',
-    notes: ''
+    notes: '',
+    jobType: '',
   });
   
   const [saving, setSaving] = useState(false);
@@ -81,6 +89,8 @@ const EditEmployeeForm = ({ employee, onClose, onSubmit }: EditEmployeeFormProps
         gender: employee.gender || 'male',
         birthDate: employee.birthDate || '',
         employeeType: employee.employeeType || 'pns',
+        joinDate: employee.joinDate || '',
+        appointmentDate: employee.appointmentDate || '',
         workUnit: employee.workUnit || '',
         position: employee.position || '',
         rank: employee.rank || '',
@@ -95,7 +105,8 @@ const EditEmployeeForm = ({ employee, onClose, onSubmit }: EditEmployeeFormProps
         photo: null,
         status: employee.status || 'Aktif',
         positionHistory: employee.positionHistory || '',
-        notes: employee.notes || ''
+        notes: employee.notes || '',
+        jobType: employee.jobType || '',
       });
       
       // Set temp photo if available
@@ -219,6 +230,8 @@ const EditEmployeeForm = ({ employee, onClose, onSubmit }: EditEmployeeFormProps
         gender: formData.gender,
         birthDate: formData.birthDate,
         employeeType: formData.employeeType,
+        joinDate: formData.joinDate,
+        appointmentDate: formData.appointmentDate,
         workUnit: formData.workUnit,
         position: formData.position,
         rank: formData.rank,
@@ -233,6 +246,7 @@ const EditEmployeeForm = ({ employee, onClose, onSubmit }: EditEmployeeFormProps
         status: formData.status,
         positionHistory: formData.positionHistory,
         notes: formData.notes,
+        jobType: formData.jobType,
         // Only update photo if there's a new one
         photo: tempProfilePhoto
       };
@@ -252,6 +266,95 @@ const EditEmployeeForm = ({ employee, onClose, onSubmit }: EditEmployeeFormProps
     
     const date = new Date(dateString);
     return date instanceof Date && !isNaN(date.getTime());
+  };
+
+  // Helper untuk konversi Date ke yyyy-mm-dd
+  const toYMD = (date: Date | null) => {
+    if (!date) return '';
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  // Helper BUP dan sisa masa kerja
+  const getBUP = (jobType: string): number => {
+    switch (jobType) {
+      case 'pimpinan_tinggi_madya':
+      case 'pimpinan_tinggi_pratama':
+      case 'fungsional_ahli_madya':
+        return 60;
+      case 'fungsional_ahli_utama':
+        return 65;
+      case 'fungsional_ahli_pertama':
+      case 'fungsional_ahli_muda':
+      case 'administrasi':
+      default:
+        return 58;
+    }
+  };
+  const calculateRemainingService = (birthDate: string, jobType: string): number | null => {
+    if (!birthDate || !jobType) return null;
+    const birth = new Date(birthDate);
+    const today = new Date();
+    const bup = getBUP(jobType);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return Math.max(0, bup - age);
+  };
+
+  // Tambahkan fungsi validasi yang sama persis dengan AddEmployeeForm
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.name.trim()) {
+      newErrors.name = 'Nama pegawai harus diisi';
+    }
+    // NIP dan TMT Pengangkatan wajib untuk PNS dan PPPK
+    if (formData.employeeType === 'pns' || formData.employeeType === 'pppk') {
+      if (!formData.nip.trim()) {
+        newErrors.nip = 'NIP harus diisi';
+      } else if (!/^\d{18}$/.test(formData.nip)) {
+        newErrors.nip = 'NIP harus terdiri dari 18 digit angka';
+      }
+      if (!formData.appointmentDate) {
+        newErrors.appointmentDate = 'TMT Pengangkatan harus diisi';
+      } else if (!isValidDate(formData.appointmentDate)) {
+        newErrors.appointmentDate = 'Format TMT Pengangkatan tidak valid';
+      }
+      // Validate jobType for ASN
+      if (!formData.jobType) {
+        newErrors.jobType = 'Jenis Jabatan harus dipilih';
+      }
+      // Calculate and validate remaining service period
+      if (formData.birthDate && formData.jobType) {
+        const remainingService = calculateRemainingService(formData.birthDate, formData.jobType);
+        if (remainingService !== null && remainingService <= 0) {
+          newErrors.birthDate = 'Pegawai sudah mencapai batas usia pensiun';
+        }
+      }
+    }
+    // Tanggal Mulai Bekerja wajib untuk Non-ASN
+    if (formData.employeeType === 'honorer') {
+      if (!formData.joinDate) {
+        newErrors.joinDate = 'Tanggal Mulai Bekerja harus diisi';
+      } else if (!isValidDate(formData.joinDate)) {
+        newErrors.joinDate = 'Format Tanggal Mulai Bekerja tidak valid';
+      }
+    }
+    if (!formData.position.trim()) {
+      newErrors.position = 'Jabatan harus diisi';
+    }
+    if (!formData.workUnit.trim()) {
+      newErrors.workUnit = 'Unit kerja harus diisi';
+    }
+    if (formData.birthDate && !isValidDate(formData.birthDate)) {
+      newErrors.birthDate = 'Format tanggal lahir tidak valid';
+    }
+    setError(Object.values(newErrors)[0] || null);
+    return Object.keys(newErrors).length === 0;
   };
 
   return (
@@ -407,6 +510,73 @@ const EditEmployeeForm = ({ employee, onClose, onSubmit }: EditEmployeeFormProps
                         <option value="honorer">Honorer</option>
                       </select>
                     </div>
+
+                    {/* TMT Pengangkatan untuk ASN */}
+                    {(formData.employeeType === 'pns' || formData.employeeType === 'pppk') && (
+                      <div>
+                        <label htmlFor="jobType" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Jenis Jabatan <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          id="jobType"
+                          name="jobType"
+                          value={formData.jobType}
+                          onChange={handleInputChange}
+                          required
+                          className="block w-full rounded-md border border-gray-300 dark:border-gray-600 py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 text-sm"
+                        >
+                          <option value="">Pilih Jenis Jabatan</option>
+                          <option value="pimpinan_tinggi_madya">Pimpinan Tinggi Ahli Madya</option>
+                          <option value="pimpinan_tinggi_pratama">Pimpinan Tinggi Pratama</option>
+                          <option value="fungsional_ahli_utama">Fungsional Ahli Utama</option>
+                          <option value="fungsional_ahli_madya">Fungsional Ahli Madya</option>
+                          <option value="fungsional_ahli_pertama">Fungsional Ahli Pertama</option>
+                          <option value="fungsional_ahli_muda">Fungsional Ahli Muda</option>
+                          <option value="administrasi">Administrasi</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Tanggal Mulai Bekerja untuk Non-ASN */}
+                    {formData.employeeType === 'honorer' && (
+                      <div>
+                        <label htmlFor="joinDate" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Tanggal Mulai Bekerja <span className="text-red-500">*</span>
+                        </label>
+                        <DatePicker
+                          id="joinDate"
+                          locale="id"
+                          dateFormat="dd MMMM yyyy"
+                          selected={formData.joinDate ? new Date(formData.joinDate) : null}
+                          onChange={(date) => {
+                            setFormData(prev => ({ ...prev, joinDate: date ? toYMD(date) : '' }));
+                          }}
+                          placeholderText="Pilih tanggal mulai bekerja"
+                          className="block w-full rounded-md border border-gray-300 dark:border-gray-600 py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 text-sm"
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          readOnly={false}
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label htmlFor="birthDate" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Tanggal Lahir <span className="text-red-500">*</span>
+                      </label>
+                      <DatePicker
+                        selected={formData.birthDate ? new Date(formData.birthDate) : null}
+                        onChange={(date) => {
+                          setFormData(prev => ({ ...prev, birthDate: date ? toYMD(date) : '' }));
+                        }}
+                        dateFormat="dd/MM/yyyy"
+                        locale="id"
+                        className="block w-full rounded-md border border-gray-300 dark:border-gray-600 py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 text-sm"
+                        placeholderText="Pilih tanggal"
+                        readOnly={false}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -550,6 +720,89 @@ const EditEmployeeForm = ({ employee, onClose, onSubmit }: EditEmployeeFormProps
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              {/* TMT Pengangkatan hanya untuk PNS dan PPPK */}
+              {(formData.employeeType === 'pns' || formData.employeeType === 'pppk') && (
+                <div>
+                  <label htmlFor="appointmentDate" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    TMT Pengangkatan <span className="text-red-500">*</span>
+                  </label>
+                  <DatePicker
+                    id="appointmentDate"
+                    locale="id"
+                    dateFormat="dd MMMM yyyy"
+                    selected={formData.appointmentDate ? new Date(formData.appointmentDate) : null}
+                    onChange={(date) => {
+                      setFormData(prev => ({ ...prev, appointmentDate: date ? toYMD(date) : '' }));
+                    }}
+                    placeholderText="Pilih TMT Pengangkatan"
+                    className="block w-full rounded-md border border-gray-300 dark:border-gray-600 py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 text-sm"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                    readOnly={false}
+                  />
+                </div>
+              )}
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="block w-full rounded-md border border-gray-300 dark:border-gray-600 py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 text-sm"
+                />
+              </div>
+              {/* Nomor HP */}
+              <div>
+                <label htmlFor="phoneNumber" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nomor HP
+                </label>
+                <input
+                  type="tel"
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleInputChange}
+                  className="block w-full rounded-md border border-gray-300 dark:border-gray-600 py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 text-sm"
+                />
+              </div>
+              {/* Alamat */}
+              <div>
+                <label htmlFor="address" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Alamat
+                </label>
+                <textarea
+                  id="address"
+                  name="address"
+                  rows={3}
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="block w-full rounded-md border border-gray-300 dark:border-gray-600 py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 text-sm"
+                />
+              </div>
+              {/* Catatan Tambahan */}
+              <div>
+                <label htmlFor="notes" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Catatan Tambahan
+                </label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows={2}
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="Catatan tambahan atau informasi penting lainnya"
+                  className="block w-full rounded-md border border-gray-300 dark:border-gray-600 py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 text-sm"
+                />
               </div>
             </div>
             

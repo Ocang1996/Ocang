@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { UserRole } from '../models/User.js';
+import { UserRole } from '../models/User';
 
 // Extend Express Request interface to include user property
 declare global {

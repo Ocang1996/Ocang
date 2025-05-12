@@ -195,8 +195,26 @@ export const exportToPDF = async (
       });
     }
 
-    // Save the PDF
-    pdf.save(`${title}_${formatDate()}.pdf`);
+    // Save the PDF as a direct download instead of opening print dialog
+    const pdfOutput = pdf.output('blob');
+    
+    // Create a download link
+    const downloadLink = document.createElement('a');
+    const url = URL.createObjectURL(pdfOutput);
+    
+    // Set up download attributes
+    downloadLink.href = url;
+    downloadLink.download = `${title}_${formatDate()}.pdf`;
+    
+    // Append to body, click to download, then remove
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(url);
+    }, 100);
   } catch (error) {
     console.error('Error generating PDF:', error);
     throw error;
@@ -519,7 +537,13 @@ export const prepareReportData = (reportType: string, dashboardData: any) => {
  * @param employees Array of employee data
  * @returns Formatted data for the report
  */
-export const generateReportFromEmployeeData = (reportType: string, employees: Employee[]) => {
+type GenderDistributionItem = {
+  Gender: string;
+  Jumlah: number;
+  Persentase: string;
+};
+
+export const generateReportFromEmployeeData = (reportType: string, employees: Employee[]): any[] => {
   // Ensure we have employees data
   if (!employees || employees.length === 0) {
     return [];
@@ -678,7 +702,7 @@ export const generateReportFromEmployeeData = (reportType: string, employees: Em
       
     case 'demographic-dashboard':
       // Buat laporan demografis lengkap untuk ekspor PDF
-      const genderDistribution = generateReportFromEmployeeData('gender-distribution', employees);
+      const genderDistribution = generateReportFromEmployeeData('gender-distribution', employees) as GenderDistributionItem[];
       
       // Hitung jumlah pegawai berdasarkan jenis
       const employeeTypeCount: Record<string, number> = {};

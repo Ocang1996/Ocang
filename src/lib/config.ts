@@ -25,6 +25,8 @@ export const API_CONFIG = {
       REGISTER: '/auth/register',
       VERIFY: '/auth/verify',
       REFRESH: '/auth/refresh',
+      FORGOT_PASSWORD: '/auth/forgot-password',
+      RESET_PASSWORD: '/auth/reset-password',
     },
     
     // Employee endpoints
@@ -152,4 +154,4 @@ export const IMAGE_CONFIG = {
   ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif']
 };
 
-export default { API_CONFIG, APP_CONFIG }; 
+// Exported configs can be imported directly using named imports

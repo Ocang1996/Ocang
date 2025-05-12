@@ -66,6 +66,7 @@ const AgeDistributionChart = ({ data, onViewDetails }: AgeDistributionChartProps
   const containerRef = useRef<HTMLDivElement>(null);
   const { isDark, language } = useTheme();
   const { t } = useTranslation();
+  const [selectedAgeIndex, setSelectedAgeIndex] = useState<number | null>(null);
   
   // Force re-render when the data changes
   const chartKey = useMemo(() => `age-chart-${JSON.stringify(data)}-${Date.now()}`, [data]);
@@ -363,8 +364,8 @@ const AgeDistributionChart = ({ data, onViewDetails }: AgeDistributionChartProps
     
     const youngGroup = data.under30;
     const seniorGroup = data.above50;
-    const youngPercentage = ((youngGroup / total) * 100).toFixed(1);
-    const seniorPercentage = ((seniorGroup / total) * 100).toFixed(1);
+    const youngPercentage = Number(((youngGroup / total) * 100).toFixed(1));
+    const seniorPercentage = Number(((seniorGroup / total) * 100).toFixed(1));
     
     // Determine the distribution type
     if (seniorGroup > youngGroup && seniorPercentage > 40) {
@@ -586,6 +587,7 @@ const AgeDistributionChart = ({ data, onViewDetails }: AgeDistributionChartProps
                 }`}
                 onMouseEnter={() => setHoveredIndex(i)}
                 onMouseLeave={() => setHoveredIndex(null)}
+                onClick={() => setSelectedAgeIndex(i)}
               >
                 <div className="flex justify-between mb-1">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
@@ -608,6 +610,35 @@ const AgeDistributionChart = ({ data, onViewDetails }: AgeDistributionChartProps
           </div>
         </div>
       </div>
+      {selectedAgeIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="animate-scaleIn bg-gray-50 dark:bg-gray-900/95 border border-emerald-200 dark:border-emerald-700 rounded-2xl shadow-2xl p-8 w-full max-w-lg relative transition-all">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-emerald-500 dark:hover:text-emerald-300 text-2xl font-bold focus:outline-none"
+              onClick={() => setSelectedAgeIndex(null)}
+              aria-label="Tutup"
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-bold mb-4 text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+              <span>{labels[selectedAgeIndex]}</span>
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+            </h3>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 dark:text-gray-300">Jumlah:</span>
+                <span className="font-semibold text-lg text-gray-900 dark:text-white">{formatNumber(dataValues[selectedAgeIndex])}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 dark:text-gray-300">Persentase:</span>
+                <span className="font-semibold text-lg text-emerald-600 dark:text-emerald-400">
+                  {((dataValues[selectedAgeIndex] / total) * 100).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

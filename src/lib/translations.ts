@@ -39,6 +39,7 @@ type TranslationKeys = {
   nav_dashboard: string;
   nav_employees: string;
   nav_reports: string;
+  nav_leave: string;
   nav_profile: string;
   nav_settings: string;
   nav_help: string;
@@ -274,6 +275,60 @@ type TranslationKeys = {
   user_role_user: string;
   access_denied: string;
   access_denied_message: string;
+
+  // Leave Management
+  leave_management: string;
+  leave_title: string;
+  leave_description: string;
+  leave_employee_name: string;
+  leave_type: string;
+  leave_duration: string;
+  leave_allocation: string;
+  leave_balance: string;
+  leave_period: string;
+  leave_status: string;
+  leave_reason: string;
+  leave_dates: string;
+  leave_start_date: string;
+  leave_end_date: string;
+  leave_request: string;
+  leave_add: string;
+  leave_edit: string;
+  leave_delete: string;
+  leave_approve: string;
+  leave_reject: string;
+  leave_cancel: string;
+  leave_detail: string;
+  leave_history: string;
+  leave_quota: string;
+  leave_working_days: string;
+  leave_holidays: string;
+  leave_weekends: string;
+  leave_non_working_days: string;
+  leave_annual: string;
+  leave_big: string;
+  leave_sick: string;
+  leave_maternity: string;
+  leave_important_reason: string;
+  leave_unpaid: string;
+  leave_collective: string;
+  leave_details_title: string;
+  leave_employee_info: string;
+  leave_info: string;
+  leave_nip: string;
+  leave_remaining: string;
+  leave_used: string;
+  leave_from_previous_year: string;
+  leave_total_available: string;
+  leave_system_info: string;
+  leave_created_at: string;
+  leave_updated_at: string;
+  leave_created_by: string;
+  leave_summary: string;
+  leave_action_view: string;
+  leave_add_form_title: string;
+  leave_workday_count: string;
+  leave_apply: string;
 };
 
 type Translations = {
@@ -320,6 +375,7 @@ const translations: Translations = {
     nav_dashboard: 'Dashboard',
     nav_employees: 'Daftar Pegawai',
     nav_reports: 'Laporan',
+    nav_leave: 'Cuti Pegawai',
     nav_profile: 'Profil',
     nav_settings: 'Pengaturan',
     nav_help: 'Bantuan',
@@ -553,8 +609,62 @@ const translations: Translations = {
     user_role_admin: 'Admin',
     user_role_superadmin: 'Super Admin',
     user_role_user: 'User',
-    access_denied: 'Akses Tidak Diizinkan',
+    access_denied: 'Akses Ditolak',
     access_denied_message: 'Anda tidak memiliki izin untuk mengakses halaman ini. Hanya admin dan superadmin yang dapat mengelola pengguna.',
+    
+    // Leave Management
+    leave_management: 'Manajemen Cuti',
+    leave_title: 'Cuti Pegawai',
+    leave_description: 'Kelola pengajuan cuti pegawai',
+    leave_employee_name: 'Nama Pegawai',
+    leave_type: 'Jenis Cuti',
+    leave_duration: 'Durasi',
+    leave_allocation: 'Alokasi Total',
+    leave_balance: 'Sisa',
+    leave_period: 'Periode',
+    leave_status: 'Status',
+    leave_reason: 'Alasan Cuti',
+    leave_dates: 'Tanggal Cuti',
+    leave_start_date: 'Tanggal Mulai',
+    leave_end_date: 'Tanggal Selesai',
+    leave_request: 'Pengajuan Cuti',
+    leave_add: 'Tambah Cuti',
+    leave_edit: 'Edit Cuti',
+    leave_delete: 'Hapus Cuti',
+    leave_approve: 'Setujui',
+    leave_reject: 'Tolak',
+    leave_cancel: 'Batalkan',
+    leave_detail: 'Detail Cuti',
+    leave_history: 'Riwayat Cuti',
+    leave_quota: 'Kuota Cuti',
+    leave_working_days: 'Hari Kerja',
+    leave_holidays: 'Hari Libur',
+    leave_weekends: 'Akhir Pekan',
+    leave_non_working_days: 'Hari Tidak Bekerja',
+    leave_annual: 'Tahunan',
+    leave_big: 'Besar',
+    leave_sick: 'Sakit',
+    leave_maternity: 'Melahirkan',
+    leave_important_reason: 'Alasan Penting',
+    leave_unpaid: 'Di Luar Tanggungan Negara',
+    leave_collective: 'Cuti Bersama',
+    leave_details_title: 'Detail Cuti Pegawai',
+    leave_employee_info: 'Informasi Pegawai',
+    leave_info: 'Informasi Cuti',
+    leave_nip: 'NIP/ID Pegawai',
+    leave_remaining: 'Sisa Cuti',
+    leave_used: 'Digunakan',
+    leave_from_previous_year: 'Dari Tahun Sebelumnya',
+    leave_total_available: 'Total Sisa Cuti',
+    leave_system_info: 'Informasi Sistem',
+    leave_created_at: 'Dibuat pada',
+    leave_updated_at: 'Terakhir diperbarui',
+    leave_created_by: 'Diinput oleh',
+    leave_summary: 'Ringkasan Semua Jenis Cuti',
+    leave_action_view: 'Lihat Detail',
+    leave_add_form_title: 'Tambah Data Cuti',
+    leave_workday_count: 'Jumlah Hari Kerja',
+    leave_apply: 'Ajukan Cuti',
   },
   en: {
     // Common
@@ -594,6 +704,7 @@ const translations: Translations = {
     nav_dashboard: 'Dashboard',
     nav_employees: 'Employee List',
     nav_reports: 'Reports',
+    nav_leave: 'Employee Leave',
     nav_profile: 'Profile',
     nav_settings: 'Settings',
     nav_help: 'Help',
@@ -829,7 +940,61 @@ const translations: Translations = {
     user_role_user: 'User',
     access_denied: 'Access Denied',
     access_denied_message: 'You do not have permission to access this page. Only admins and superadmins can manage users.',
+    
+    // Leave Management
+    leave_management: 'Leave Management',
+    leave_title: 'Employee Leave',
+    leave_description: 'Manage employee leave requests',
+    leave_employee_name: 'Employee Name',
+    leave_type: 'Leave Type',
+    leave_duration: 'Duration',
+    leave_allocation: 'Total Allocation',
+    leave_balance: 'Remaining',
+    leave_period: 'Period',
+    leave_status: 'Status',
+    leave_reason: 'Leave Reason',
+    leave_dates: 'Leave Dates',
+    leave_start_date: 'Start Date',
+    leave_end_date: 'End Date',
+    leave_request: 'Leave Request',
+    leave_add: 'Add Leave',
+    leave_edit: 'Edit Leave',
+    leave_delete: 'Delete Leave',
+    leave_approve: 'Approve',
+    leave_reject: 'Reject',
+    leave_cancel: 'Cancel',
+    leave_detail: 'Leave Details',
+    leave_history: 'Leave History',
+    leave_quota: 'Leave Quota',
+    leave_working_days: 'Working Days',
+    leave_holidays: 'Holidays',
+    leave_weekends: 'Weekends',
+    leave_non_working_days: 'Non-Working Days',
+    leave_annual: 'Annual',
+    leave_big: 'Extended',
+    leave_sick: 'Sick',
+    leave_maternity: 'Maternity',
+    leave_important_reason: 'Important Reason',
+    leave_unpaid: 'Unpaid',
+    leave_collective: 'Collective Leave',
+    leave_details_title: 'Employee Leave Details',
+    leave_employee_info: 'Employee Information',
+    leave_info: 'Leave Information',
+    leave_nip: 'Employee ID/NIP',
+    leave_remaining: 'Remaining Leave',
+    leave_used: 'Used',
+    leave_from_previous_year: 'From Previous Year',
+    leave_total_available: 'Total Available Leave',
+    leave_system_info: 'System Information',
+    leave_created_at: 'Created at',
+    leave_updated_at: 'Last updated',
+    leave_created_by: 'Created by',
+    leave_summary: 'All Leave Types Summary',
+    leave_action_view: 'View Details',
+    leave_add_form_title: 'Add Leave Record',
+    leave_workday_count: 'Working Day Count',
+    leave_apply: 'Apply for Leave',
   }
 };
 
-export default translations; 
+export default translations;

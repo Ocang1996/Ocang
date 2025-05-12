@@ -1,0 +1,607 @@
+import { useState, useEffect } from 'react';
+import { useLeave, LeaveType, LEAVE_REGULATIONS } from '../../lib/LeaveContext';
+import { useEmployees } from '../../lib/EmployeeContext';
+import { X, Calendar, FileCheck, AlertCircle, Info, HelpCircle } from 'lucide-react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { registerLocale, setDefaultLocale } from 'react-datepicker';
+import { id } from 'date-fns/locale/id';
+import { differenceInCalendarDays, addDays, format } from 'date-fns';
+
+// Initialize date picker locale
+registerLocale('id', id);
+setDefaultLocale('id');
+
+// Definisi tipe untuk status cuti
+type LeaveStatus = 'Approved' | 'Pending' | 'Rejected' | 'Completed';
+
+interface AddLeaveFormProps {
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const AddLeaveForm = ({ onClose, onSuccess }: AddLeaveFormProps) => {
+  const { addLeave, leaveQuotas } = useLeave();
+  const { employees } = useEmployees();
+  
+  // State untuk data form
+  const currentYear = new Date().getFullYear();
+
+  const [formData, setFormData] = useState({
+    employeeId: '',
+    employeeName: '',
+    employeeNip: '',
+    leaveType: 'Tahunan' as LeaveType,
+    duration: 0,
+    startDate: '',
+    endDate: '',
+    reason: '',
+    status: 'Pending' as LeaveStatus,
+    documentRequired: false,
+    document: '',
+    serviceYears: 0,
+    inputBy: 'Admin Sistem',
+    year: currentYear,
+    accumulatedFromPrevYear: false,
+    extendedLeave: false
+  });
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
+  const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
+  const [showRegulationInfo, setShowRegulationInfo] = useState(false);
+  const [leaveQuota, setLeaveQuota] = useState<any>(null);
+  
+  // Efek untuk mendapatkan informasi quota dan eligibility pegawai yang dipilih
+  useEffect(() => {
+    if (formData.employeeId) {
+      const selectedEmployee = employees.find(emp => emp.id.toString() === formData.employeeId);
+      const employeeQuota = leaveQuotas.find(q => 
+        q.employeeId.toString() === formData.employeeId && 
+        q.year === formData.year
+      );
+      
+      if (selectedEmployee) {
+        // Hitung masa kerja dalam tahun
+        const joinDate = selectedEmployee.joinDate || '';
+        let serviceYears = 0;
+        
+        if (joinDate) {
+          const start = new Date(joinDate);
+          const now = new Date();
+          serviceYears = Math.floor((now.getTime() - start.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+        }
+        
+        setFormData(prev => ({
+          ...prev,
+          employeeName: selectedEmployee.name,
+          employeeNip: selectedEmployee.nip || '',
+          serviceYears: serviceYears
+        }));
+        
+        if (employeeQuota) {
+          setLeaveQuota(employeeQuota);
+        }
+      }
+    }
+  }, [formData.employeeId, employees, leaveQuotas, formData.year]);
+  
+  // Efek untuk mengatur document required berdasarkan jenis cuti
+  useEffect(() => {
+    if (!formData.leaveType) return;
+    
+    const leaveTypeInfo = LEAVE_REGULATIONS[formData.leaveType];
+    
+    if (leaveTypeInfo) {
+      // Update requiresDocument based on leave type
+      const requires = 'requiresDocument' in leaveTypeInfo ? leaveTypeInfo.requiresDocument : false;
+      
+      setFormData(prev => ({
+        ...prev,
+        documentRequired: requires
+      }));
+      
+      // Validate minimum service years
+      if ('minServiceYears' in leaveTypeInfo && 
+          formData.serviceYears < (leaveTypeInfo.minServiceYears || 0)) {
+        setErrors(prev => ({
+          ...prev,
+          serviceYears: `Pegawai belum memenuhi syarat masa kerja minimum ${leaveTypeInfo.minServiceYears} tahun untuk jenis cuti ini.`
+        }));
+      } else {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.serviceYears;
+          return newErrors;
+        });
+      }
+      
+      // Set default duration for specific leave types
+      if (formData.leaveType === 'Melahirkan' && !formData.duration) {
+        setFormData(prev => ({
+          ...prev,
+          duration: 90 // 3 bulan
+        }));
+      } else if (formData.leaveType === 'Besar' && !formData.duration) {
+        setFormData(prev => ({
+          ...prev,
+          duration: 90 // 3 bulan
+        }));
+      }
+    }
+  }, [formData.leaveType, formData.serviceYears]);
+  
+  // Efek untuk menghitung durasi otomatis berdasarkan tanggal
+  useEffect(() => {
+    if (selectedStartDate && selectedEndDate) {
+      const daysDiff = differenceInCalendarDays(selectedEndDate, selectedStartDate) + 1;
+      if (daysDiff > 0) {
+        setFormData(prev => ({
+          ...prev,
+          duration: daysDiff
+        }));
+      }
+    }
+  }, [selectedStartDate, selectedEndDate]);
+  
+  // Handler untuk mengubah input form
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === 'duration') {
+      // Convert to number for numeric fields
+      const numValue = parseInt(value, 10) || 0;
+      setFormData(prev => ({
+        ...prev,
+        [name]: numValue
+      }));
+      
+      // Jika mengubah durasi, perbarui tanggal selesai
+      if (selectedStartDate && numValue > 0) {
+        const newEndDate = addDays(selectedStartDate, numValue - 1);
+        setSelectedEndDate(newEndDate);
+        setFormData(prev => ({
+          ...prev,
+          endDate: format(newEndDate, 'yyyy-MM-dd')
+        }));
+      }
+    } else if (name === 'employeeId') {
+      // Ketika pegawai dipilih, auto-fill data pegawai dari useEffect
+      setFormData(prev => ({
+        ...prev,
+        employeeId: value
+      }));
+    } else if (name === 'leaveType') {
+      // Mengubah jenis cuti
+      setFormData(prev => ({
+        ...prev,
+        leaveType: value as LeaveType
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+  
+  // Handler untuk mengubah tanggal
+  const handleStartDateChange = (date: Date | null) => {
+    setSelectedStartDate(date);
+    if (date) {
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      setFormData(prev => ({
+        ...prev,
+        startDate: formattedDate
+      }));
+      
+      // Update end date based on duration
+      if (formData.duration > 0) {
+        const newEndDate = addDays(date, formData.duration - 1);
+        setSelectedEndDate(newEndDate);
+        setFormData(prev => ({
+          ...prev,
+          endDate: format(newEndDate, 'yyyy-MM-dd')
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        startDate: ''
+      }));
+    }
+  };
+  
+  const handleEndDateChange = (date: Date | null) => {
+    setSelectedEndDate(date);
+    if (date) {
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      setFormData(prev => ({
+        ...prev,
+        endDate: formattedDate
+      }));
+      
+      // Calculate duration if start date exists
+      if (selectedStartDate) {
+        const daysDiff = differenceInCalendarDays(date, selectedStartDate) + 1;
+        if (daysDiff > 0) {
+          setFormData(prev => ({
+            ...prev,
+            duration: daysDiff
+          }));
+        }
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        endDate: ''
+      }));
+    }
+  };
+  
+  // Tampilkan info regulasi
+  const toggleRegulationInfo = () => {
+    setShowRegulationInfo(!showRegulationInfo);
+  };
+  
+  // Validasi form
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    const leaveTypeInfo = formData.leaveType ? LEAVE_REGULATIONS[formData.leaveType] : null;
+    
+    if (!formData.employeeId) {
+      newErrors.employeeId = 'Pegawai harus dipilih';
+    }
+    
+    if (!formData.leaveType) {
+      newErrors.leaveType = 'Jenis cuti harus dipilih';
+    }
+    
+    // Validasi NIP untuk pegawai ASN (PNS/PPPK)
+    const selectedEmployee = employees.find(emp => emp.id.toString() === formData.employeeId);
+    if (selectedEmployee && (selectedEmployee.type === 'PNS' || selectedEmployee.type === 'PPPK')) {
+      if (!formData.employeeNip || formData.employeeNip.length !== 18) {
+        newErrors.employeeNip = 'NIP ASN harus berisi 18 digit';
+      }
+    }
+    
+    // Validasi masa kerja
+    if (leaveTypeInfo && 'minServiceYears' in leaveTypeInfo) {
+      const minYears = leaveTypeInfo.minServiceYears || 0;
+      if (formData.serviceYears < minYears) {
+        newErrors.serviceYears = `Pegawai belum memenuhi syarat masa kerja minimum ${minYears} tahun untuk jenis cuti ini.`;
+      }
+    }
+    
+    // Validasi durasi
+    if (formData.duration <= 0) {
+      newErrors.duration = 'Durasi cuti harus lebih dari 0';
+    } else if (leaveTypeInfo && formData.duration > leaveTypeInfo.maxDuration) {
+      newErrors.duration = `Durasi cuti tidak boleh melebihi ${leaveTypeInfo.maxDuration} hari untuk jenis cuti ${formData.leaveType}`;
+    }
+    
+    if ((formData.startDate && !formData.endDate) || (!formData.startDate && formData.endDate)) {
+      newErrors.endDate = 'Tanggal mulai dan selesai harus diisi keduanya';
+    }
+    
+    if (formData.startDate && formData.endDate) {
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
+      
+      if (start > end) {
+        newErrors.endDate = 'Tanggal selesai tidak boleh sebelum tanggal mulai';
+      }
+    }
+    
+    // Validasi alasan/dokumen
+    if (!formData.reason) {
+      newErrors.reason = 'Alasan cuti harus diisi';
+    }
+    
+    if (formData.documentRequired && !formData.document) {
+      newErrors.document = 'Dokumen pendukung diperlukan untuk jenis cuti ini';
+    }
+    
+    // Validasi khusus untuk cuti tahunan
+    if (formData.leaveType === 'Tahunan' && leaveQuota) {
+      if (formData.duration > leaveQuota.annualRemaining) {
+        newErrors.duration = `Durasi cuti melebihi sisa cuti tahunan (${leaveQuota.annualRemaining} hari)`;
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
+  // Handler submit form
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (validateForm()) {
+      // Persiapkan data yang akan disimpan
+      const leaveData = {
+        employeeId: formData.employeeId,
+        employeeName: formData.employeeName,
+        employeeNip: formData.employeeNip,
+        leaveType: formData.leaveType,
+        duration: formData.duration,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        documentRequired: formData.documentRequired,
+        document: formData.document,
+        reason: formData.reason,
+        status: formData.status,
+        serviceYears: formData.serviceYears,
+        inputBy: formData.inputBy,
+        year: formData.year,
+        accumulatedFromPrevYear: formData.accumulatedFromPrevYear,
+        extendedLeave: formData.extendedLeave
+      };
+      
+      addLeave(leaveData);
+      onSuccess();
+    }
+  };
+  
+  // Rendering UI
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Tambah Data Cuti</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Pegawai */}
+            <div className="form-group">
+              <label className="block text-sm font-medium mb-1">Pegawai</label>
+              <select 
+                name="employeeId"
+                value={formData.employeeId}
+                onChange={handleChange}
+                className={`w-full rounded border ${errors.employeeId ? 'border-red-500' : 'border-gray-300'} p-2`}
+              >
+                <option value="">Pilih Pegawai</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id.toString()}>
+                    {emp.name} {emp.nip ? `(${emp.nip})` : ''}
+                  </option>
+                ))}
+              </select>
+              {errors.employeeId && <p className="text-red-500 text-sm mt-1">{errors.employeeId}</p>}
+            </div>
+            
+            {/* Jenis Cuti */}
+            <div className="form-group">
+              <label className="block text-sm font-medium mb-1">
+                Jenis Cuti
+                <button 
+                  type="button" 
+                  onClick={toggleRegulationInfo}
+                  className="ml-2 text-blue-500 hover:text-blue-700"
+                >
+                  <Info className="w-4 h-4 inline" />
+                </button>
+              </label>
+              <select 
+                name="leaveType"
+                value={formData.leaveType}
+                onChange={handleChange}
+                className={`w-full rounded border ${errors.leaveType ? 'border-red-500' : 'border-gray-300'} p-2`}
+              >
+                <option value="">Pilih Jenis Cuti</option>
+                <option value="Tahunan">Cuti Tahunan</option>
+                <option value="Sakit">Cuti Sakit</option>
+                <option value="Besar">Cuti Besar</option>
+                <option value="Melahirkan">Cuti Melahirkan</option>
+                <option value="Alasan Penting">Cuti Alasan Penting</option>
+                <option value="Di Luar Tanggungan Negara">Cuti Di Luar Tanggungan Negara (CLTN)</option>
+              </select>
+              {errors.leaveType && <p className="text-red-500 text-sm mt-1">{errors.leaveType}</p>}
+            </div>
+            
+            {/* Informasi Regulasi */}
+            {showRegulationInfo && formData.leaveType && (
+              <div className="col-span-1 md:col-span-2 bg-blue-50 p-3 rounded-md mb-4">
+                <div className="flex items-start">
+                  <HelpCircle className="w-5 h-5 text-blue-500 mr-2 mt-0.5" />
+                  <div>
+                    <h3 className="font-medium text-blue-700">Ketentuan {formData.leaveType}</h3>
+                    <p className="text-sm mt-1">
+                      {LEAVE_REGULATIONS[formData.leaveType]?.description || 'Informasi tidak tersedia'}
+                    </p>
+                    <div className="mt-2 text-xs text-blue-700 grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="font-medium">Durasi Maksimal:</span> {LEAVE_REGULATIONS[formData.leaveType]?.maxDuration} hari
+                      </div>
+                      {'minServiceYears' in LEAVE_REGULATIONS[formData.leaveType] && (
+                        <div>
+                          <span className="font-medium">Masa Kerja Minimal:</span> {LEAVE_REGULATIONS[formData.leaveType].minServiceYears} tahun
+                        </div>
+                      )}
+                      {'requiresDocument' in LEAVE_REGULATIONS[formData.leaveType] && LEAVE_REGULATIONS[formData.leaveType].requiresDocument && (
+                        <div>
+                          <span className="font-medium">Dokumen Pendukung:</span> Diperlukan
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Durasi */}
+            <div className="form-group">
+              <label className="block text-sm font-medium mb-1">Durasi (hari)</label>
+              <input 
+                type="number"
+                name="duration"
+                value={formData.duration}
+                onChange={handleChange}
+                min="1"
+                className={`w-full rounded border ${errors.duration ? 'border-red-500' : 'border-gray-300'} p-2`}
+              />
+              {errors.duration && <p className="text-red-500 text-sm mt-1">{errors.duration}</p>}
+            </div>
+            
+            {/* NIP */}
+            <div className="form-group">
+              <label className="block text-sm font-medium mb-1">NIP</label>
+              <input
+                type="text"
+                name="employeeNip"
+                value={formData.employeeNip}
+                onChange={handleChange}
+                readOnly
+                className="w-full rounded border border-gray-300 bg-gray-100 p-2"
+              />
+              {errors.employeeNip && <p className="text-red-500 text-sm mt-1">{errors.employeeNip}</p>}
+            </div>
+            
+            {/* Masa Kerja */}
+            <div className="form-group">
+              <label className="block text-sm font-medium mb-1">Masa Kerja (tahun)</label>
+              <input
+                type="text"
+                value={formData.serviceYears}
+                readOnly
+                className="w-full rounded border border-gray-300 bg-gray-100 p-2"
+              />
+              {errors.serviceYears && (
+                <p className="text-amber-600 text-sm mt-1 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-1" /> {errors.serviceYears}
+                </p>
+              )}
+            </div>
+            
+            {/* Quota Cuti Tahunan */}
+            {formData.leaveType === 'Tahunan' && leaveQuota && (
+              <div className="form-group">
+                <label className="block text-sm font-medium mb-1">Sisa Cuti Tahunan</label>
+                <div className="flex items-center space-x-4 text-sm">
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                    Total: {leaveQuota.annualQuota} hari
+                  </span>
+                  <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded">
+                    Terpakai: {leaveQuota.annualUsed} hari
+                  </span>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
+                    Sisa: {leaveQuota.annualRemaining} hari
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {/* Tanggal Mulai */}
+            <div className="form-group">
+              <label className="block text-sm font-medium mb-1">Tanggal Mulai</label>
+              <div className="relative">
+                <DatePicker
+                  selected={selectedStartDate}
+                  onChange={handleStartDateChange}
+                  dateFormat="dd/MM/yyyy"
+                  className={`w-full rounded border ${errors.startDate ? 'border-red-500' : 'border-gray-300'} p-2`}
+                  placeholderText="Pilih tanggal"
+                />
+                <Calendar className="absolute right-2 top-2.5 w-4 h-4 text-gray-400" />
+              </div>
+              {errors.startDate && <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>}
+            </div>
+            
+            {/* Tanggal Selesai */}
+            <div className="form-group">
+              <label className="block text-sm font-medium mb-1">Tanggal Selesai</label>
+              <div className="relative">
+                <DatePicker
+                  selected={selectedEndDate}
+                  onChange={handleEndDateChange}
+                  dateFormat="dd/MM/yyyy"
+                  className={`w-full rounded border ${errors.endDate ? 'border-red-500' : 'border-gray-300'} p-2`}
+                  placeholderText="Pilih tanggal"
+                  minDate={selectedStartDate || undefined}
+                />
+                <Calendar className="absolute right-2 top-2.5 w-4 h-4 text-gray-400" />
+              </div>
+              {errors.endDate && <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>}
+            </div>
+            
+            {/* Alasan */}
+            <div className="form-group col-span-1 md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Alasan Cuti</label>
+              <textarea
+                name="reason"
+                value={formData.reason}
+                onChange={handleChange}
+                rows={3}
+                className={`w-full rounded border ${errors.reason ? 'border-red-500' : 'border-gray-300'} p-2`}
+                placeholder="Masukkan alasan cuti"
+              ></textarea>
+              {errors.reason && <p className="text-red-500 text-sm mt-1">{errors.reason}</p>}
+            </div>
+            
+            {/* Dokumen */}
+            {formData.documentRequired && (
+              <div className="form-group col-span-1 md:col-span-2">
+                <label className="block text-sm font-medium mb-1">
+                  Dokumen Pendukung
+                  <span className="text-red-500 ml-1">*</span>
+                </label>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    name="document"
+                    value={formData.document}
+                    onChange={handleChange}
+                    className={`w-full rounded border ${errors.document ? 'border-red-500' : 'border-gray-300'} p-2 mr-2`}
+                    placeholder="Nomor Dokumen / Keterangan"
+                  />
+                  <button
+                    type="button"
+                    className="bg-gray-100 text-gray-700 py-2 px-4 rounded hover:bg-gray-200 flex items-center"
+                  >
+                    <FileCheck className="w-4 h-4 mr-1" /> Upload
+                  </button>
+                </div>
+                {errors.document && <p className="text-red-500 text-sm mt-1">{errors.document}</p>}
+                <p className="text-gray-500 text-xs mt-1">
+                  * Dokumen pendukung seperti surat keterangan dokter untuk cuti sakit, atau surat keterangan lainnya.
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-6 flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 rounded-md text-white hover:bg-blue-700"
+            >
+              Simpan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default AddLeaveForm;

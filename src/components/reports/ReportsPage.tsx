@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../layout/Sidebar';
 import Header from '../layout/Header';
+import { useSidebar } from '../../lib/SidebarContext';
 import { 
   FileText, Download, Users, Award, BookOpen, Building, Calendar, 
-  ChevronDown, Check, ImageIcon, PresentationIcon, FileImage, 
-  FileText as FileTextIcon, FileSpreadsheet, Plus, X, Info, BarChart
+  ChevronDown, Check, PresentationIcon, 
+  FileText as FileTextIcon, FileSpreadsheet, X, Info
 } from 'lucide-react';
 import { useTheme } from '../../lib/ThemeContext';
 import { useTranslation } from '../../lib/useTranslation';
 import { useEmployees } from '../../lib/EmployeeContext';
-import { Employee } from '../../lib/EmployeeContext';
+// Employee type imported from EmployeeContext
+import PptxGenJS from "pptxgenjs";
+// html2canvas may be needed in future features
 
 // Add TypeScript interface declaration for msSaveOrOpenBlob
 declare global {
@@ -44,18 +47,15 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [selectedReports, setSelectedReports] = useState<string[]>([]);
-  const [selectedFormat, setSelectedFormat] = useState<string>('pdf');
+  const [selectedFormat, setSelectedFormat] = useState<string>('excel');
   const [isReportDropdownOpen, setIsReportDropdownOpen] = useState<boolean>(false);
   const [isFormatDropdownOpen, setIsFormatDropdownOpen] = useState<boolean>(false);
-  const [selectedYear, setSelectedYear] = useState<string>('2023');
-  const [selectedQuarter, setSelectedQuarter] = useState<string>('1');
-  const [selectedMonth, setSelectedMonth] = useState<string>('1');
-  
+  const { expanded } = useSidebar();  
   const reportDropdownRef = useRef<HTMLDivElement>(null);
   const formatDropdownRef = useRef<HTMLDivElement>(null);
 
   // Get theme and translations
-  const { isDark } = useTheme();
+  const { } = useTheme(); // We'll use theme context later if needed
   const { t } = useTranslation();
   
   // Get employee data from context
@@ -312,28 +312,15 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
 
   // Format dropdown options
   const formatOptions: FormatOption[] = [
-    { id: 'pdf', name: 'PDF', icon: <FileTextIcon size={16} />, color: 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' },
     { id: 'excel', name: 'Excel', icon: <FileSpreadsheet size={16} />, color: 'text-green-600 bg-green-50 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50' },
-    { id: 'csv', name: 'CSV', icon: <FileSpreadsheet size={16} />, color: 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/50' },
     { id: 'docx', name: 'Word', icon: <FileTextIcon size={16} />, color: 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/50' },
     { id: 'pptx', name: 'PowerPoint', icon: <PresentationIcon size={16} />, color: 'text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/50' },
-    { id: 'jpg', name: 'JPG', icon: <FileImage size={16} />, color: 'text-purple-600 bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900/50' },
-    { id: 'png', name: 'PNG', icon: <ImageIcon size={16} />, color: 'text-indigo-600 bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-900/50' }
+    { id: 'pdf', name: 'PDF', icon: <FileTextIcon size={16} />, color: 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' }
   ];
 
   // Fungsi untuk mendapatkan informasi laporan berdasarkan ID
   const getReportInfo = (reportId: string): ReportType | undefined => {
     return availableReports.find(report => report.id === reportId);
-  };
-
-  // Fungsi untuk mendapatkan warna format berdasarkan ID
-  const getFormatColor = (formatId: string): string => {
-    return formatOptions.find(format => format.id === formatId)?.color || '';
-  };
-
-  // Fungsi untuk mendapatkan ikon format berdasarkan ID
-  const getFormatIcon = (formatId: string): JSX.Element | undefined => {
-    return formatOptions.find(format => format.id === formatId)?.icon;
   };
 
   // Toggle pilihan laporan
@@ -382,7 +369,7 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
   }, [selectedReports, selectedFormat]);
 
   // Fungsi untuk mengunduh laporan
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (selectedReports.length === 0) {
       alert('Silakan pilih minimal satu jenis laporan untuk diunduh');
       return;
@@ -1290,414 +1277,73 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
         
         // For Word documents in browser, we'll create a downloadable HTML file
         // that can be opened in Word (Word will handle the conversion)
-        const mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         const blob = new Blob([docContent], { type: 'text/html' });
         downloadBlob(blob, `${fileName}.doc`);
         break;
       }
         
       case 'pptx': {
-        // Untuk PowerPoint, kita akan menawarkan dua opsi untuk pengguna
-        const choice = confirm(
-          'Pilih metode ekspor PowerPoint:\n\n' +
-          'OK = Unduh file PowerPoint (.pptx) sederhana\n' +
-          'Cancel = Unduh data Excel untuk impor ke PowerPoint (lebih lengkap)\n\n' +
-          'Catatan: File PowerPoint langsung mungkin tidak memiliki fitur lengkap'
-        );
-
-        // Jika pengguna memilih unduh PowerPoint langsung
-        if (choice) {
-          // Dapatkan data tanggal saat ini
-          const currentDate = new Date().toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          });
-          
-          // Buat template PowerPoint dalam format XML (pptx adalah arsip zip dengan XML di dalamnya)
-          // Template ini hanya berisi slide dasar dengan data minimal
-          // Ini lebih mungkin bisa dibuka oleh aplikasi PowerPoint standar
-          
-          const templatePPTX = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <p:sldMasterIdLst>
-    <p:sldMasterId id="2147483648" r:id="rId1"/>
-  </p:sldMasterIdLst>
-  <p:sldIdLst>
-    <p:sldId id="256" r:id="rId2"/>
-    <p:sldId id="257" r:id="rId3"/>
-    <p:sldId id="258" r:id="rId4"/>
-  </p:sldIdLst>
-  <p:sldSz cx="9144000" cy="6858000"/>
-  <p:notesSz cx="6858000" cy="9144000"/>
-</p:presentation>`;
-
-          const slide1 = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <p:cSld>
-    <p:spTree>
-      <p:nvGrpSpPr>
-        <p:cNvPr id="1" name=""/>
-        <p:cNvGrpSpPr/>
-        <p:nvPr/>
-      </p:nvGrpSpPr>
-      <p:grpSpPr>
-        <a:xfrm>
-          <a:off x="0" y="0"/>
-          <a:ext cx="0" cy="0"/>
-        </a:xfrm>
-      </p:grpSpPr>
-      <p:sp>
-        <p:nvSpPr>
-          <p:cNvPr id="2" name="Title"/>
-          <p:cNvSpPr>
-            <a:spLocks noGrp="1"/>
-          </p:cNvSpPr>
-          <p:nvPr>
-            <p:ph type="ctrTitle"/>
-          </p:nvPr>
-        </p:nvSpPr>
-        <p:spPr/>
-        <p:txBody>
-          <a:bodyPr/>
-          <a:lstStyle/>
-          <a:p>
-            <a:r>
-              <a:rPr lang="id-ID" dirty="0" smtClean="0"/>
-              <a:t>Laporan Demografi Pegawai BSKDN</a:t>
-            </a:r>
-          </a:p>
-        </p:txBody>
-      </p:sp>
-      <p:sp>
-        <p:nvSpPr>
-          <p:cNvPr id="3" name="Subtitle"/>
-          <p:cNvSpPr>
-            <a:spLocks noGrp="1"/>
-          </p:cNvSpPr>
-          <p:nvPr>
-            <p:ph type="subTitle" idx="1"/>
-          </p:nvPr>
-        </p:nvSpPr>
-        <p:spPr/>
-        <p:txBody>
-          <a:bodyPr/>
-          <a:lstStyle/>
-          <a:p>
-            <a:r>
-              <a:rPr lang="id-ID" dirty="0" smtClean="0"/>
-              <a:t>Badan Strategi Kebijakan Dalam Negeri</a:t>
-            </a:r>
-          </a:p>
-          <a:p>
-            <a:r>
-              <a:rPr lang="id-ID" dirty="0" smtClean="0"/>
-              <a:t>Tanggal: ${currentDate}</a:t>
-            </a:r>
-          </a:p>
-        </p:txBody>
-      </p:sp>
-    </p:spTree>
-  </p:cSld>
-</p:sld>`;
-
-          // Statistik slide 
-          const slide2 = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <p:cSld>
-    <p:spTree>
-      <p:nvGrpSpPr>
-        <p:cNvPr id="1" name=""/>
-        <p:cNvGrpSpPr/>
-        <p:nvPr/>
-      </p:nvGrpSpPr>
-      <p:grpSpPr>
-        <a:xfrm>
-          <a:off x="0" y="0"/>
-          <a:ext cx="0" cy="0"/>
-        </a:xfrm>
-      </p:grpSpPr>
-      <p:sp>
-        <p:nvSpPr>
-          <p:cNvPr id="2" name="Title"/>
-          <p:cNvSpPr>
-            <a:spLocks noGrp="1"/>
-          </p:cNvSpPr>
-          <p:nvPr>
-            <p:ph type="title"/>
-          </p:nvPr>
-        </p:nvSpPr>
-        <p:spPr/>
-        <p:txBody>
-          <a:bodyPr/>
-          <a:lstStyle/>
-          <a:p>
-            <a:r>
-              <a:rPr lang="id-ID" dirty="0" smtClean="0"/>
-              <a:t>Ikhtisar Data Pegawai</a:t>
-            </a:r>
-          </a:p>
-        </p:txBody>
-      </p:sp>
-      <p:sp>
-        <p:nvSpPr>
-          <p:cNvPr id="3" name="Content"/>
-          <p:cNvSpPr>
-            <a:spLocks noGrp="1"/>
-          </p:cNvSpPr>
-          <p:nvPr>
-            <p:ph type="body" idx="1"/>
-          </p:nvPr>
-        </p:nvSpPr>
-        <p:spPr/>
-        <p:txBody>
-          <a:bodyPr/>
-          <a:lstStyle/>
-          <a:p>
-            <a:r>
-              <a:rPr lang="id-ID" dirty="0" smtClean="0"/>
-              <a:t>Total Pegawai: ${reportData.stats.totalEmployees}</a:t>
-            </a:r>
-          </a:p>
-          <a:p>
-            <a:r>
-              <a:rPr lang="id-ID" dirty="0" smtClean="0"/>
-              <a:t>Pegawai Baru (30 hari terakhir): ${reportData.stats.newEmployees}</a:t>
-            </a:r>
-          </a:p>
-          <a:p>
-            <a:r>
-              <a:rPr lang="id-ID" dirty="0" smtClean="0"/>
-              <a:t>Unit Kerja: ${reportData.stats.totalDepartments}</a:t>
-            </a:r>
-          </a:p>
-        </p:txBody>
-      </p:sp>
-    </p:spTree>
-  </p:cSld>
-</p:sld>`;
-
-          // Slide ketiga (penutup)
-          const slide3 = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <p:cSld>
-    <p:spTree>
-      <p:nvGrpSpPr>
-        <p:cNvPr id="1" name=""/>
-        <p:cNvGrpSpPr/>
-        <p:nvPr/>
-      </p:nvGrpSpPr>
-      <p:grpSpPr>
-        <a:xfrm>
-          <a:off x="0" y="0"/>
-          <a:ext cx="0" cy="0"/>
-        </a:xfrm>
-      </p:grpSpPr>
-      <p:sp>
-        <p:nvSpPr>
-          <p:cNvPr id="2" name="Title"/>
-          <p:cNvSpPr>
-            <a:spLocks noGrp="1"/>
-          </p:cNvSpPr>
-          <p:nvPr>
-            <p:ph type="ctrTitle"/>
-          </p:nvPr>
-        </p:nvSpPr>
-        <p:spPr/>
-        <p:txBody>
-          <a:bodyPr/>
-          <a:lstStyle/>
-          <a:p>
-            <a:r>
-              <a:rPr lang="id-ID" dirty="0" smtClean="0"/>
-              <a:t>Terima Kasih</a:t>
-            </a:r>
-          </a:p>
-        </p:txBody>
-      </p:sp>
-      <p:sp>
-        <p:nvSpPr>
-          <p:cNvPr id="3" name="Subtitle"/>
-          <p:cNvSpPr>
-            <a:spLocks noGrp="1"/>
-          </p:cNvSpPr>
-          <p:nvPr>
-            <p:ph type="subTitle" idx="1"/>
-          </p:nvPr>
-        </p:nvSpPr>
-        <p:spPr/>
-        <p:txBody>
-          <a:bodyPr/>
-          <a:lstStyle/>
-          <a:p>
-            <a:r>
-              <a:rPr lang="id-ID" dirty="0" smtClean="0"/>
-              <a:t>Laporan dibuat dari Dashboard Pegawai BSKDN</a:t>
-            </a:r>
-          </a:p>
-        </p:txBody>
-      </p:sp>
-    </p:spTree>
-  </p:cSld>
-</p:sld>`;
-          
-          try {
-            // Format tipe konten sesuai standar MIME untuk .pptx
-            const contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-            
-            // Metode 1: Gunakan FileSaver.js jika tersedia
-            if (typeof window.saveAs === 'function') {
-              const blob = new Blob([templatePPTX, slide1, slide2, slide3], { type: contentType });
-              window.saveAs(blob, `${fileName}.pptx`);
-            } 
-            // Metode 2: Pendekatan tradisional download link
-            else {
-              // Konversi template ke base64 untuk kompatibilitas maksimum
-              const b64Content = btoa(unescape(encodeURIComponent(templatePPTX + slide1 + slide2 + slide3)));
-              const dataUrl = `data:${contentType};base64,${b64Content}`;
-              
-              // Buat link download
-              const a = document.createElement('a');
-              a.href = dataUrl;
-              a.download = `${fileName}.pptx`;
-              a.style.display = 'none';
-              document.body.appendChild(a);
-              a.click();
-              setTimeout(() => {
-                document.body.removeChild(a);
-                
-                // Tampilkan petunjuk tambahan setelah download
-                alert('File PowerPoint dasar telah diunduh (.pptx)\n\n' +
-                      'Catatan: Ini adalah file PowerPoint sederhana.\n' +
-                      'Jika Anda memerlukan laporan lebih lengkap, gunakan opsi PDF.');
-              }, 100);
-            }
-          } catch (error) {
-            console.error('Error saat membuat file PowerPoint:', error);
-            alert('Terjadi kesalahan saat membuat file PowerPoint. Mencoba alternatif...');
-            
-            // Gunakan alternatif jika metode utama gagal
-            createAlternativeDownload();
-          }
-        } 
-        // Jika pengguna memilih unduh Excel untuk diimpor ke PowerPoint
-        else {
-          createAlternativeDownload();
+        const pptx = new PptxGenJS();
+        const slide = pptx.addSlide();
+        // Judul slide
+        slide.addText('Laporan Demografi Pegawai BSKDN', { x: 0.5, y: 0.3, fontSize: 20, bold: true });
+        slide.addText(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, { x: 0.5, y: 0.8, fontSize: 12 });
+        // Pilih data tabel sesuai laporan yang dipilih
+        let tableRows = [];
+        let tableHeaders = [];
+        let tableTitle = '';
+        if (selectedReports.includes('gender-distribution')) {
+          tableTitle = 'Distribusi Gender';
+          tableHeaders = ['Gender', 'Jumlah', 'Persentase'];
+          tableRows = [
+            ['Laki-laki', reportData.genderData.male, ((reportData.genderData.male / reportData.stats.totalEmployees) * 100).toFixed(2) + '%'],
+            ['Perempuan', reportData.genderData.female, ((reportData.genderData.female / reportData.stats.totalEmployees) * 100).toFixed(2) + '%'],
+          ];
+        } else if (selectedReports.includes('rank-distribution')) {
+          tableTitle = 'Distribusi Golongan';
+          tableHeaders = ['Golongan', 'Jumlah', 'Persentase'];
+          tableRows = reportData.rankData.map((item: { golongan: string; count: number }) => [
+            formatGolongan(item.golongan),
+            item.count,
+            ((item.count / reportData.stats.totalEmployees) * 100).toFixed(2) + '%',
+          ]);
+        } else if (selectedReports.includes('education-distribution')) {
+          tableTitle = 'Distribusi Tingkat Pendidikan';
+          tableHeaders = ['Tingkat Pendidikan', 'Jumlah', 'Persentase'];
+          tableRows = reportData.educationData.map((item: { level: string; count: number }) => [
+            formatEducationLevel(item.level),
+            item.count,
+            ((item.count / reportData.stats.totalEmployees) * 100).toFixed(2) + '%',
+          ]);
+        } else if (selectedReports.includes('department-distribution')) {
+          tableTitle = 'Distribusi Unit Kerja';
+          tableHeaders = ['Unit Kerja', 'Jumlah', 'Persentase'];
+          tableRows = reportData.workUnitData.map((item: { name: string; count: number }) => [
+            item.name,
+            item.count,
+            ((item.count / reportData.stats.totalEmployees) * 100).toFixed(2) + '%',
+          ]);
+        } else if (selectedReports.includes('age-distribution')) {
+          tableTitle = 'Distribusi Usia';
+          tableHeaders = ['Kelompok Usia', 'Jumlah', 'Persentase'];
+          tableRows = reportData.ageData.map((item: { group: string; count: number }) => [
+            item.group,
+            item.count,
+            ((item.count / reportData.stats.totalEmployees) * 100).toFixed(2) + '%',
+          ]);
+        } else {
+          tableTitle = 'Statistik Pegawai';
+          tableHeaders = ['Total Pegawai'];
+          tableRows = [[reportData.stats.totalEmployees]];
         }
-        
-        // Fungsi untuk membuat download alternatif (Excel)
-        function createAlternativeDownload() {
-          // Buat data Excel menggunakan format CSV yang bisa dibuka di Excel
-          let excelData = `Laporan Demografi Pegawai BSKDN - ${timestamp}\n`;
-          excelData += `Total Pegawai: ${reportData.stats.totalEmployees}\n\n`;
-          
-          // Gender distribution
-          if (selectedReports.includes('gender-distribution') || selectedReports.includes('full-report')) {
-            excelData += 'Distribusi Gender\n';
-            excelData += 'Gender,Jumlah,Persentase\n';
-            excelData += `Laki-laki,${reportData.genderData.male},${((reportData.genderData.male / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
-            excelData += `Perempuan,${reportData.genderData.female},${((reportData.genderData.female / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n\n`;
-          }
-          
-          // Employee types
-          if (selectedReports.includes('employee-count') || selectedReports.includes('full-report')) {
-            excelData += 'Distribusi Jenis Pegawai\n';
-            excelData += 'Jenis,Jumlah,Persentase\n';
-            excelData += `PNS,${reportData.employeeTypesData.pns},${((reportData.employeeTypesData.pns / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
-            excelData += `P3K,${reportData.employeeTypesData.p3k},${((reportData.employeeTypesData.p3k / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
-            excelData += `Non BSKDN,${reportData.employeeTypesData.nonAsn},${((reportData.employeeTypesData.nonAsn / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n\n`;
-          }
-          
-          // Work unit distribution
-          if (selectedReports.includes('unit-distribution') || selectedReports.includes('full-report')) {
-            excelData += 'Distribusi Unit Kerja\n';
-            excelData += 'Unit Kerja,Jumlah,Persentase\n';
-            
-            reportData.workUnitData.forEach((item: { name: string; count: number }) => {
-              excelData += `${item.name},${item.count},${((item.count / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
-            });
-            
-            excelData += '\n';
-          }
-          
-          // Rank distribution
-          if (selectedReports.includes('rank-distribution') || selectedReports.includes('full-report')) {
-            excelData += 'Distribusi Golongan\n';
-            excelData += 'Golongan,Jumlah,Persentase\n';
-            
-            reportData.rankData.forEach((item: { golongan: string; count: number }) => {
-              excelData += `${formatGolongan(item.golongan)},${item.count},${((item.count / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
-            });
-            
-            excelData += '\n';
-          }
-          
-          // Education distribution
-          if (selectedReports.includes('education-distribution') || selectedReports.includes('full-report')) {
-            excelData += 'Distribusi Tingkat Pendidikan\n';
-            excelData += 'Tingkat Pendidikan,Jumlah,Persentase\n';
-            
-            reportData.educationData.forEach((item: { level: string; count: number }) => {
-              excelData += `${formatEducationLevel(item.level)},${item.count},${((item.count / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
-            });
-            
-            excelData += '\n';
-          }
-          
-          // Age distribution
-          if (selectedReports.includes('age-distribution') || selectedReports.includes('full-report')) {
-            excelData += 'Distribusi Usia\n';
-            excelData += 'Kelompok Usia,Jumlah,Persentase\n';
-            
-            reportData.ageData.forEach((item: { group: string; count: number }) => {
-              excelData += `${item.group},${item.count},${((item.count / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
-            });
-          }
-          
-          // Tampilan instruksi untuk PowerPoint
-          excelData += '\nINSTRUKSI UNTUK MEMBUAT PRESENTASI:\n';
-          excelData += '1. Pilih data yang ingin divisualisasikan (misalnya distribusi gender)\n';
-          excelData += '2. Klik Insert > Chart dan pilih tipe grafik yang sesuai\n';
-          excelData += '3. Sesuaikan grafik sesuai kebutuhan\n';
-          excelData += '4. Salin grafik (Ctrl+C) dan tempel ke PowerPoint (Ctrl+V)\n';
-          excelData += '5. Untuk teks, salin sel yang berisi informasi ke PowerPoint\n';
-          
-          // Gunakan Blob API untuk membuat file Excel
-          const blob = new Blob(["\ufeff" + excelData], { 
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' 
-          });
-          
-          // Gunakan nama file dengan ekstensi .xlsx
-          const excelFileName = `${fileName}_PowerPoint_Data.xlsx`;
-          
-          try {
-            // Buat link untuk download
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = excelFileName;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            // Tampilkan instruksi tambahan
-            setTimeout(() => {
-              alert(
-                'File Excel untuk PowerPoint telah diunduh!\n\n' +
-                'Langkah membuat presentasi PowerPoint:\n' +
-                '1. Buka file Excel yang diunduh\n' +
-                '2. Ikuti instruksi di bagian bawah file Excel\n' +
-                '3. Atau Anda bisa menggunakan format PDF yang lebih mudah'
-              );
-            }, 1000);
-          } catch (error) {
-            console.error('Error saat membuat file Excel:', error);
-            alert('Terjadi kesalahan saat membuat file Excel. Silakan coba format lain.');
-          }
-        }
-        
+        // Tambahkan judul tabel
+        slide.addText(tableTitle, { x: 0.5, y: 1.2, fontSize: 16, bold: true });
+        // Tambahkan tabel ke slide
+        slide.addTable([
+          tableHeaders,
+          ...tableRows
+        ], { x: 0.5, y: 1.7, w: 8, fontSize: 12 });
+        await pptx.writeFile({ fileName: fileName + '.pptx' });
         break;
       }
         
@@ -1705,14 +1351,21 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
     }
   };
 
+  // Refs untuk chart dashboard (akan digunakan untuk fitur export chart)
+  /* const genderChartRef = useRef<HTMLDivElement>(null);
+  const rankChartRef = useRef<HTMLDivElement>(null);
+  const educationChartRef = useRef<HTMLDivElement>(null);
+  const unitChartRef = useRef<HTMLDivElement>(null);
+  const ageChartRef = useRef<HTMLDivElement>(null); */
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex">
       <Sidebar activeItem="reports" onLogout={onLogout} />
       
-      <div className="w-full min-h-screen">
+      <div className={`flex-1 transition-all duration-400 ease-out transform-gpu ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <Header title={t('reports_title')} onLogout={onLogout} />
         
-        <div className="mx-auto px-4 pt-24 pb-8 lg:ml-28 lg:mr-6 max-w-7xl">
+        <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
           <div className="mb-6 mt-2">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
               {t('available_reports')}
@@ -1746,7 +1399,7 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
                     {isReportDropdownOpen && (
                       <div
                         ref={reportDropdownRef}
-                        className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                        className="absolute z-10 mt-1 right-0 left-auto w-full min-w-[220px] bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
                       >
                         {availableReports.map((report) => (
                           <button 
@@ -1777,14 +1430,14 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
                 </div>
                 
                 {/* Selected reports */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {selectedReports.length === 0 ? (
                     <div className="text-center py-8">
                       <FileText size={40} className="mx-auto text-gray-400 dark:text-gray-600 mb-2" />
                       <p className="text-gray-500 dark:text-gray-400">{t('report_info')}</p>
                     </div>
                   ) : (
-                    selectedReports.map((reportId) => {
+                    selectedReports.map((reportId: string) => {
                       const report = getReportInfo(reportId);
                       return report ? (
                         <div key={reportId} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded-md p-3">
@@ -1825,13 +1478,17 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
                       onClick={() => setIsFormatDropdownOpen(!isFormatDropdownOpen)}
                       className="flex justify-between items-center w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
-                      <span>{selectedFormat ? t(`select_format_${selectedFormat}`) : t('select_format')}</span>
+                      <span>{selectedFormat === 'pdf' && t('select_format_pdf')}
+                            {selectedFormat === 'excel' && (t('select_format_xlsx') || 'Excel')}
+                            {selectedFormat === 'docx' && t('select_format_docx')}
+                            {selectedFormat === 'pptx' && ('PowerPoint')}
+                            {!['pdf','excel','docx','pptx'].includes(selectedFormat) && t('select_format')}</span>
                       <ChevronDown size={16} className={`ml-2 transition-transform duration-200 ${isFormatDropdownOpen ? 'transform rotate-180' : ''}`} />
                     </button>
 
                     {/* Format Selection Dropdown */}
                     {isFormatDropdownOpen && (
-                      <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                      <div className="absolute z-10 mt-1 w-full min-w-[180px] bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
                         {formatOptions.map((format) => (
                           <button 
                             key={format.id}

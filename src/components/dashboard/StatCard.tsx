@@ -42,7 +42,7 @@ const StatCard = ({ title, value, icon, change = 0, period = "bulan" }: StatCard
 
   return (
     <div
-      className="backdrop-blur-md rounded-xl border border-gray-200/30 dark:border-gray-700/30 p-6 shadow-sm hover:shadow-md transition-all duration-300"
+      className="stat-card backdrop-blur-md rounded-xl border border-gray-200/30 dark:border-gray-700/30 p-6 shadow-sm hover:shadow-md transition-all duration-300"
       style={{
         background: getGradientBackground(),
       }}

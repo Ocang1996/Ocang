@@ -12,10 +12,13 @@ import LandingPage from './components/landing/LandingPage';
 import SettingsIndicator from './components/ui/SettingsIndicator';
 import TwoFactorAuth from './components/auth/TwoFactorAuth';
 import HelpPage from './components/help/HelpPage';
+import ResetPassword from './components/auth/ResetPassword';
+import LeavePage from './components/leave/LeavePage';
 import { UserRole } from './types/auth';
 import { initSessionTimeout } from './lib/sessionUtils';
-import { isAdmin, authenticateUser } from './lib/auth';
-import { addLoginNotification, getUserDeviceInfo } from './lib/notificationUtils';
+import { isAdmin } from './lib/auth';
+import { LeaveProvider } from './lib/LeaveContext';
+import { SidebarProvider } from './lib/SidebarContext';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -93,7 +96,7 @@ function App() {
     return false;
   };
   
-  const checkIfTwoFAEnabled = (username: string): boolean => {
+  const checkIfTwoFAEnabled = (_username: string): boolean => {
     // This would typically be an API call to check if 2FA is enabled
     // For demo, check if it's enabled in localStorage based on settings
     try {
@@ -148,86 +151,105 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {sessionExpired && (
-        <div className="fixed top-0 left-0 right-0 bg-red-100 text-red-800 p-3 z-50 flex items-center justify-between">
-          <div className="flex-1 text-center">
-            <span className="font-medium">Sesi Anda telah berakhir:</span> Silakan login kembali untuk melanjutkan.
-          </div>
-          <button 
-            onClick={() => setSessionExpired(false)}
-            className="p-1 hover:bg-red-200 rounded-full"
-          >
-            ×
-          </button>
-        </div>
-      )}
+    <SidebarProvider>
+      <LeaveProvider>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          {sessionExpired && (
+            <div className="fixed top-0 left-0 right-0 bg-red-100 text-red-800 p-3 z-50 flex items-center justify-between">
+              <div className="flex-1 text-center">
+                <span className="font-medium">Sesi Anda telah berakhir:</span> Silakan login kembali untuk melanjutkan.
+              </div>
+              <button 
+                onClick={() => setSessionExpired(false)}
+                className="p-1 hover:bg-red-200 rounded-full"
+              >
+                ×
+              </button>
+            </div>
+          )}
 
-      {requireTwoFA ? (
-        <TwoFactorAuth 
-          username={pendingUser}
-          onVerify={handleVerifyTwoFA}
-          onCancel={handleCancelTwoFA}
-        />
-      ) : (
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          
-          <Route path="/login" element={
-            isAuthenticated ? <Navigate to="/dashboard" /> : 
-            <Login onLogin={handleLogin} />
-          } />
-          
-          <Route path="/register" element={
-            isAuthenticated ? <Navigate to="/dashboard" /> : 
-            <Register />
-          } />
-          
-          <Route path="/dashboard" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <Dashboard onLogout={handleLogout} userRole={userRole} />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/employees" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <EmployeeList onLogout={handleLogout} />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/reports" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <ReportsPage onLogout={handleLogout} />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/profile" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <ProfilePage onLogout={handleLogout} />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/settings" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <Settings onLogout={handleLogout} />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/help" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <HelpPage onLogout={handleLogout} />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
-        </Routes>
-      )}
-      
-      {/* Display the settings indicator when user is authenticated */}
-      {isAuthenticated && (
-        <SettingsIndicator />
-      )}
-    </div>
+        {requireTwoFA ? (
+          <TwoFactorAuth 
+            username={pendingUser}
+            onVerify={handleVerifyTwoFA}
+            onCancel={handleCancelTwoFA}
+          />
+        ) : (
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            
+            <Route path="/login" element={
+              isAuthenticated ? <Navigate to="/dashboard" /> : 
+              <Login onLogin={handleLogin} />
+            } />
+            
+            <Route path="/register" element={
+              isAuthenticated ? <Navigate to="/dashboard" /> : 
+              <Register />
+            } />
+            
+            <Route path="/reset-password" element={<ResetPassword />} />
+            
+            {/* Dashboard route wrapped in ProtectedRoute */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <Dashboard onLogout={handleLogout} userRole={userRole} />
+              </ProtectedRoute>
+            } />
+            
+            {/* Employees route wrapped in ProtectedRoute */}
+            <Route path="/employees" element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <EmployeeList onLogout={handleLogout} />
+              </ProtectedRoute>
+            } />
+            
+            {/* Profile route wrapped in ProtectedRoute */}
+            <Route path="/profile" element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ProfilePage onLogout={handleLogout} />
+              </ProtectedRoute>
+            } />
+            
+            {/* Reports route wrapped in ProtectedRoute */}
+            <Route path="/reports" element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <ReportsPage onLogout={handleLogout} />
+              </ProtectedRoute>
+            } />
+            
+            {/* Settings route wrapped in ProtectedRoute */}
+            <Route path="/settings" element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <Settings onLogout={handleLogout} />
+              </ProtectedRoute>
+            } />
+            
+            {/* Help route wrapped in ProtectedRoute */}
+            <Route path="/help" element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <HelpPage onLogout={handleLogout} />
+              </ProtectedRoute>
+            } />
+            
+            {/* Leave route wrapped in ProtectedRoute */}
+            <Route path="/leave" element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <LeavePage onLogout={handleLogout} />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
+          </Routes>
+        )}
+        
+        {/* Display the settings indicator when user is authenticated */}
+        {isAuthenticated && (
+          <SettingsIndicator />
+        )}
+      </div>
+    </LeaveProvider>
+    </SidebarProvider>
   );
 }
 

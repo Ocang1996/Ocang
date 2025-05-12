@@ -11,6 +11,8 @@ export interface IUser {
   role: UserRole;
   createdAt: Date;
   updatedAt: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: number;
 }
 
 interface IUserMethods {
@@ -49,6 +51,12 @@ const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
       type: String,
       enum: ['superadmin', 'admin', 'user'],
       default: 'user',
+    },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpire: {
+      type: Number,
     },
   },
   {

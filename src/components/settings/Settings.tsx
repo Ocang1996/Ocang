@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../layout/Sidebar';
 import Header from '../layout/Header';
+import { useSidebar } from '../../lib/SidebarContext';
 import { Bell, Globe, Moon, Sun, User, Shield, Database, Save, AlertTriangle, Type, Key, Lock, Smartphone, FileText, LogOut, RefreshCw, Check, X, Eye, EyeOff, Fingerprint, UserCog } from 'lucide-react';
 import { 
   applyTheme, 
@@ -18,7 +19,7 @@ import { useTheme } from '../../lib/ThemeContext';
 import { useTranslation } from '../../lib/useTranslation';
 import { saveRecoveryEmail, verifyRecoveryEmail, clearAllSessions, logoutAllDevices, downloadUserData } from '../../lib/sessionUtils';
 import UserManagementTab from './UserManagementTab';
-import { isAdmin, changePassword } from '../../lib/auth';
+import { isAdmin, isSuperAdmin, changePassword } from '../../lib/auth';
 
 interface SettingsProps {
   onLogout: () => void;
@@ -30,6 +31,7 @@ const Settings = ({ onLogout }: SettingsProps) => {
   // Use our theme context and translation hook
   const { theme, language, fontSize, setTheme, setLanguage, setFontSize } = useTheme();
   const { t } = useTranslation();
+  const { expanded } = useSidebar(); // Menggunakan sidebar context
   
   const [activeTab, setActiveTab] = useState<TabType>('appearance'); // Default to appearance tab
   const [passwordChangeCount, setPasswordChangeCount] = useState(0); // Track password changes
@@ -530,13 +532,13 @@ const Settings = ({ onLogout }: SettingsProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex">
       <Sidebar activeItem="settings" onLogout={onLogout} />
       
-      <div className="w-full min-h-screen">
+      <div className={`flex-1 transition-all duration-400 ease-out transform-gpu ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <Header title={t('settings_title')} onLogout={onLogout} />
         
-        <div className="mx-auto px-4 pt-24 pb-8 lg:ml-28 lg:mr-6 max-w-7xl">
+        <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
           <div className="mb-6 mt-2">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
               {t('settings_title')}
@@ -601,7 +603,7 @@ const Settings = ({ onLogout }: SettingsProps) => {
                       <span>{t('settings_storage')}</span>
                     </button>
                   </li>
-                  {isAdmin() && (
+                  {isSuperAdmin() && (
                     <li>
                       <button 
                         onClick={() => setActiveTab('users')}

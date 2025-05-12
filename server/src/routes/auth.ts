@@ -1,7 +1,9 @@
 import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
-import User, { IUser } from '../models/User.js';
+import User, { IUser } from '../models/User';
+import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -181,6 +183,54 @@ router.post(
       );
     } catch (error) {
       console.error('Error in user login:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
+);
+
+// @route   POST /api/auth/forgot-password
+// @desc    Send reset password link to email
+// @access  Public
+router.post(
+  '/forgot-password',
+  [body('email', 'Format email tidak valid').isEmail().normalizeEmail()],
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Format email tidak valid' });
+    }
+    const { email } = req.body;
+    try {
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ message: 'Email tidak ditemukan' });
+      }
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpire = Date.now() + 1000 * 60 * 60; // 1 jam
+      // Simpan token dan expire ke user (tambahkan field jika belum ada)
+      user.resetPasswordToken = resetToken;
+      user.resetPasswordExpire = resetTokenExpire;
+      await user.save();
+      // Kirim email
+      const transporter = nodemailer.createTransport({
+        service: process.env.EMAIL_SERVICE || 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Reset Password ASN Dashboard',
+        text: `Klik link berikut untuk reset password: ${resetUrl}`,
+      };
+      await transporter.sendMail(mailOptions);
+      return res.json({ success: true, message: 'Link reset password telah dikirim ke email Anda.' });
+    } catch (error) {
+      console.error('Error in forgot-password:', error);
       res.status(500).json({ message: 'Server error' });
     }
   }

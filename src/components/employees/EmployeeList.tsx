@@ -1,45 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../layout/Sidebar';
 import Header from '../layout/Header';
-import { Search, Filter, Download, UserPlus, MoreHorizontal, ChevronLeft, ChevronRight, X, Eye, Edit, FileText, FileSpreadsheet, ChevronDown, List, Grid, RefreshCw, Check } from 'lucide-react';
+import { Search, Download, UserPlus, ChevronLeft, ChevronRight, X, Eye, Edit, FileText, FileSpreadsheet, ChevronDown, List, Grid, RefreshCw, Check } from 'lucide-react';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeDetail from './EmployeeDetail';
 import EditEmployeeForm from './EditEmployeeForm';
 import { useTheme } from '../../lib/ThemeContext';
 import { useTranslation } from '../../lib/useTranslation';
 import { useEmployees } from '../../lib/EmployeeContext';
+import { useSidebar } from '../../lib/SidebarContext';
 import { isAdmin } from '../../lib/auth';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+// Import Employee interface from EmployeeContext
+import { Employee } from '../../lib/EmployeeContext';
 
 interface EmployeeListProps {
   onLogout: () => void;
 }
 
-// CSS for responsivitas
-const tableStyles = `
-  @media (max-width: 1280px) {
-    .employee-table th, .employee-table td {
-      padding-left: 8px;
-      padding-right: 8px;
-    }
-    .employee-table {
-      font-size: 0.875rem;
-    }
-  }
-  @media (max-width: 1024px) {
-    .employee-table th, .employee-table td {
-      padding-left: 6px;
-      padding-right: 6px;
-    }
-    .employee-table {
-      font-size: 0.8125rem;
-    }
-  }
-  @media (max-width: 768px) {
-    .employee-table .hide-sm {
-      display: none;
-    }
-  }
-`;
+// CSS for responsivitas diterapkan langsung di elemen style pada render
 
 const EmployeeList = ({ onLogout }: EmployeeListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,12 +34,10 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const itemsPerPage = 7;
   
-  // Add state to track sidebar collapse state
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
   // Get theme and translations
-  const { isDark, language } = useTheme();
+  const { language } = useTheme();
   const { t } = useTranslation();
+  const { expanded } = useSidebar(); // Get sidebar expanded state
 
   // Use our employee context for real-time data
   const { 
@@ -67,7 +46,6 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
     setSelectedEmployee, 
     loading, 
     error, 
-    fetchEmployees, 
     updateEmployeeData, 
     addEmployee,
     refreshData,
@@ -79,38 +57,7 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
     // This will re-render the component when language changes
   }, [language]);
   
-  // Listen for sidebar collapse state changes
-  useEffect(() => {
-    // Function to check if sidebar is collapsed
-    const checkSidebarState = () => {
-      const sidebarElement = document.querySelector('aside');
-      if (sidebarElement) {
-        // Check if sidebar has the w-20 class (collapsed state)
-        setSidebarCollapsed(sidebarElement.classList.contains('w-20'));
-      }
-    };
-    
-    // Check initial state
-    checkSidebarState();
-    
-    // Create observer to detect changes
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach(() => {
-        checkSidebarState();
-      });
-    });
-    
-    // Target the sidebar element for observation
-    const sidebar = document.querySelector('aside');
-    if (sidebar) {
-      observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
-    }
-    
-    // Cleanup
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+  // Menghapus useEffect untuk sidebar collapse yang tidak diperlukan
 
   // Filter employees
   const filteredEmployees = employees.filter(employee => {
@@ -157,6 +104,85 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
     };
   }, []);
 
+  // Tambahkan helper untuk masa kerja dan sisa pensiun
+  const getBUP = (jobType: string | undefined): number => {
+    switch (jobType) {
+      case 'pimpinan_tinggi_madya':
+      case 'pimpinan_tinggi_pratama':
+      case 'fungsional_ahli_madya':
+        return 60;
+      case 'fungsional_ahli_utama':
+        return 65;
+      case 'fungsional_ahli_pertama':
+      case 'fungsional_ahli_muda':
+      case 'administrasi':
+      default:
+        return 58;
+    }
+  };
+  const calculateServicePeriod = (startDate: string | undefined): string => {
+    if (!startDate) return '-';
+    const start = new Date(startDate);
+    const now = new Date();
+    let years = now.getFullYear() - start.getFullYear();
+    let months = now.getMonth() - start.getMonth();
+    let days = now.getDate() - start.getDate();
+    if (days < 0) {
+      months--;
+      days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+    }
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    return `${years} tahun ${months} bulan ${days} hari`;
+  };
+  const calculateRemainingService = (birthDate: string | undefined, jobType: string | undefined): string => {
+    if (!birthDate || !jobType) return '-';
+    const birth = new Date(birthDate);
+    const now = new Date();
+    const bup = getBUP(jobType);
+    let years = bup - (now.getFullYear() - birth.getFullYear());
+    let months = birth.getMonth() - now.getMonth();
+    let days = birth.getDate() - now.getDate();
+    if (days < 0) {
+      months--;
+      days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+    }
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    if (years < 0) return '0 tahun 0 bulan 0 hari';
+    return `${years} tahun ${months} bulan ${days} hari`;
+  };
+  const formatDateIndo = (dateString: string | undefined): string => {
+    if (!dateString) return '-';
+    let date: Date;
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      date = new Date(year, month - 1, day);
+    } else {
+      date = new Date(dateString);
+    }
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  // Helper untuk label jenis jabatan
+  const formatJobType = (jobType?: string) => {
+    switch (jobType) {
+      case 'pimpinan_tinggi_madya': return 'Pimpinan Tinggi Ahli Madya';
+      case 'pimpinan_tinggi_pratama': return 'Pimpinan Tinggi Pratama';
+      case 'fungsional_ahli_utama': return 'Fungsional Ahli Utama';
+      case 'fungsional_ahli_madya': return 'Fungsional Ahli Madya';
+      case 'fungsional_ahli_pertama': return 'Fungsional Ahli Pertama';
+      case 'fungsional_ahli_muda': return 'Fungsional Ahli Muda';
+      case 'administrasi': return 'Administrasi';
+      default: return jobType || '-';
+    }
+  };
+
   // Function to export employee data to CSV
   const exportToCSV = () => {
     setExportLoading(true);
@@ -191,6 +217,11 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
       'Phone Number',
       'Address',
       'Notes',
+      'Job Type',
+      'Appointment Date',
+      'Join Date',
+      'Service Period',
+      'Remaining Service Period',
       'Created Date',
       'Updated Date'
     ];
@@ -198,28 +229,36 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
     // Convert employee data to CSV rows with all available fields
     const csvRows = [
       headers.join(','), // Add headers as first row
-      ...dataToExport.map(employee => [
-        `"${employee.name || ''}"`, // Wrap with quotes to handle commas in names
-        `"${employee.nip || ''}"`,
-        `"${employee.gender || ''}"`,
-        `"${employee.birthDate || ''}"`,
-        `"${employee.employeeType || ''}"`,
-        `"${employee.position || ''}"`,
-        `"${employee.workUnit || ''}"`,
-        `"${employee.rank || ''}"`,
-        `"${employee.class || ''}"`,
-        `"${employee.status || ''}"`,
-        `"${employee.educationLevel || ''}"`,
-        `"${employee.educationMajor || ''}"`,
-        `"${employee.educationInstitution || ''}"`,
-        `"${employee.graduationYear || ''}"`,
-        `"${employee.email || ''}"`,
-        `"${employee.phoneNumber || ''}"`,
-        `"${employee.address || ''}"`,
-        `"${employee.notes || ''}"`,
-        `"${employee.createdAt || ''}"`,
-        `"${employee.updatedAt || ''}"`,
-      ].join(','))
+      ...dataToExport.map(emp => {
+        const employee = emp as Employee;
+        return [
+          `"${employee.name || ''}"`,
+          `"${employee.nip || ''}"`,
+          `"${employee.gender || ''}"`,
+          `"${formatDateIndo(employee.birthDate) || ''}"`,
+          `"${employee.employeeType || ''}"`,
+          `"${employee.position || ''}"`,
+          `"${employee.workUnit || ''}"`,
+          `"${employee.rank || ''}"`,
+          `"${employee.class || ''}"`,
+          `"${employee.status || ''}"`,
+          `"${employee.educationLevel || ''}"`,
+          `"${employee.educationMajor || ''}"`,
+          `"${employee.educationInstitution || ''}"`,
+          `"${employee.graduationYear || ''}"`,
+          `"${employee.email || ''}"`,
+          `"${employee.phoneNumber || ''}"`,
+          `"${employee.address || ''}"`,
+          `"${employee.notes || ''}"`,
+          `"${formatJobType(employee.jobType) || ''}"`,
+          `"${formatDateIndo(employee.appointmentDate) || ''}"`,
+          `"${formatDateIndo(employee.joinDate) || ''}"`,
+          `"${calculateServicePeriod(employee.appointmentDate || employee.joinDate)}"`,
+          `"${calculateRemainingService(employee.birthDate, employee.jobType)}"`,
+          `"${employee.createdAt || ''}"`,
+          `"${employee.updatedAt || ''}"`,
+        ].join(',');
+      })
     ];
     
     // Combine all rows into a CSV string
@@ -277,6 +316,11 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
       'Phone Number',
       'Address',
       'Notes',
+      'Job Type',
+      'Appointment Date',
+      'Join Date',
+      'Service Period',
+      'Remaining Service Period',
       'Created Date',
       'Updated Date'
     ];
@@ -284,28 +328,36 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
     // Convert employee data to Excel rows with all available fields
     const csvRows = [
       headers.join('\t'), // Use tabs for Excel compatibility
-      ...dataToExport.map(employee => [
-        employee.name || '',
-        employee.nip || '',
-        employee.gender || '',
-        employee.birthDate || '',
-        employee.employeeType || '',
-        employee.position || '',
-        employee.workUnit || '',
-        employee.rank || '',
-        employee.class || '',
-        employee.status || '',
-        employee.educationLevel || '',
-        employee.educationMajor || '',
-        employee.educationInstitution || '',
-        employee.graduationYear || '',
-        employee.email || '',
-        employee.phoneNumber || '',
-        employee.address || '',
-        employee.notes || '',
-        employee.createdAt || '',
-        employee.updatedAt || ''
-      ].join('\t'))
+      ...dataToExport.map(emp => {
+        const employee = emp as Employee;
+        return [
+          employee.name || '',
+          employee.nip || '',
+          employee.gender || '',
+          employee.birthDate || '',
+          employee.employeeType || '',
+          employee.position || '',
+          employee.workUnit || '',
+          employee.rank || '',
+          employee.class || '',
+          employee.status || '',
+          employee.educationLevel || '',
+          employee.educationMajor || '',
+          employee.educationInstitution || '',
+          employee.graduationYear || '',
+          employee.email || '',
+          employee.phoneNumber || '',
+          employee.address || '',
+          employee.notes || '',
+          formatJobType(employee.jobType),
+          employee.appointmentDate || '',
+          employee.joinDate || '',
+          calculateServicePeriod(employee.appointmentDate || employee.joinDate),
+          calculateRemainingService(employee.birthDate, employee.jobType),
+          employee.createdAt || '',
+          employee.updatedAt || ''
+        ].join('\t');
+      })
     ];
     
     // Combine all rows into a CSV string
@@ -332,134 +384,124 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
   // Function to export employee data to PDF
   const exportToPDF = () => {
     setExportLoading(true);
-    
-    // Use all employees data instead of just filtered data
-    const dataToExport = employees;
-    
-    if (dataToExport.length === 0) {
-      alert(t('no_employees_data_for_export'));
-      setExportLoading(false);
-      setShowExportMenu(false);
-      return;
-    }
-    
-    // Create HTML table for the PDF with all fields
-    let htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Daftar Lengkap Pegawai</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; font-size: 10px; }
-          h1 { color: #2563eb; text-align: center; margin-bottom: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th { background-color: #f3f4f6; text-align: left; padding: 6px; border: 1px solid #e5e7eb; }
-          td { padding: 6px; border: 1px solid #e5e7eb; }
-          .status-active { color: green; }
-          .status-leave { color: orange; }
-          .status-sick { color: red; }
-          .footer { text-align: center; font-size: 10px; color: #6b7280; margin-top: 30px; }
-        </style>
-      </head>
-      <body>
-        <h1>Daftar Lengkap Pegawai</h1>
-        <table>
-          <thead>
-            <tr>
-              <th>Nama</th>
-              <th>NIP</th>
-              <th>Gender</th>
-              <th>Tanggal Lahir</th>
-              <th>Tipe Pegawai</th>
-              <th>Jabatan</th>
-              <th>Unit Kerja</th>
-              <th>Golongan</th>
-              <th>Kelas</th>
-              <th>Status</th>
-              <th>Tingkat Pendidikan</th>
-              <th>Jurusan</th>
-              <th>Institusi Pendidikan</th>
-              <th>Tahun Lulus</th>
-              <th>Email</th>
-              <th>No. Telepon</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-    
-    dataToExport.forEach(employee => {
-      const statusClass = 
-        employee.status === 'Aktif' ? 'status-active' : 
-        employee.status === 'Cuti' ? 'status-leave' : 'status-sick';
-      
-      htmlContent += `
-        <tr>
-          <td>${employee.name || ''}</td>
-          <td>${employee.nip || ''}</td>
-          <td>${employee.gender === 'male' ? 'Laki-laki' : employee.gender === 'female' ? 'Perempuan' : ''}</td>
-          <td>${employee.birthDate || ''}</td>
-          <td>${employee.employeeType || ''}</td>
-          <td>${employee.position || ''}</td>
-          <td>${employee.workUnit || ''}</td>
-          <td>${employee.rank || ''}</td>
-          <td>${employee.class || ''}</td>
-          <td class="${statusClass}">${employee.status || ''}</td>
-          <td>${employee.educationLevel || ''}</td>
-          <td>${employee.educationMajor || ''}</td>
-          <td>${employee.educationInstitution || ''}</td>
-          <td>${employee.graduationYear || ''}</td>
-          <td>${employee.email || ''}</td>
-          <td>${employee.phoneNumber || ''}</td>
-        </tr>
-      `;
-    });
-    
-    htmlContent += `
-          </tbody>
-        </table>
-        <div class="footer">
-          Data lengkap diambil pada tanggal ${new Date().toLocaleDateString('id-ID')}
-        </div>
-      </body>
-      </html>
-    `;
-    
-    // Open in a new window to use the browser's print to PDF function
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      
-      // Wait for content to load
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-        setExportLoading(false);
-        setShowExportMenu(false);
-      }, 500);
-    } else {
-      alert('Silakan aktifkan popup untuk mengunduh PDF');
+    try {
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'legal' });
+      doc.setFontSize(12);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const title = 'Daftar Lengkap Pegawai';
+      const titleWidth = doc.getTextWidth(title);
+      doc.text(title, (pageWidth - titleWidth) / 2, 32);
+      const headers = [[
+        'Nama',
+        'NIP',
+        'Jabatan',
+        'Pangkat/Golongan',
+        'Unit Kerja',
+        'Jenis Kepegawaian',
+        'Umur',
+        'Masa Kerja',
+        'Sisa Masa Kerja',
+        'Jenis Kelamin',
+      ]];
+      const data = employees.map(emp => [
+        String(emp.name || '-'),
+        String(emp.nip || '-'),
+        String(emp.position || '-'),
+        String(emp.rank || '-'),
+        String(emp.workUnit || '-'),
+        String(emp.employeeType || '-'),
+        (() => {
+          if (!emp.birthDate) return '-';
+          const birth = new Date(emp.birthDate);
+          const now = new Date();
+          let years = now.getFullYear() - birth.getFullYear();
+          let months = now.getMonth() - birth.getMonth();
+          let days = now.getDate() - birth.getDate();
+          if (days < 0) { months--; days += 30; }
+          if (months < 0) { years--; months += 12; }
+          return `${years} tahun ${months} bulan`;
+        })(),
+        (() => {
+          const start = emp.appointmentDate || emp.joinDate;
+          if (!start) return '-';
+          const startDate = new Date(start);
+          const now = new Date();
+          let years = now.getFullYear() - startDate.getFullYear();
+          let months = now.getMonth() - startDate.getMonth();
+          let days = now.getDate() - startDate.getDate();
+          if (days < 0) { months--; days += 30; }
+          if (months < 0) { years--; months += 12; }
+          return `${years} tahun ${months} bulan`;
+        })(),
+        (() => {
+          if (!emp.birthDate || !emp.jobType) return '-';
+          const getBUP = (jobType: string): number => {
+            switch (jobType) {
+              case 'pimpinan_tinggi_madya':
+              case 'pimpinan_tinggi_pratama':
+              case 'fungsional_ahli_madya': return 60;
+              case 'fungsional_ahli_utama': return 65;
+              case 'fungsional_ahli_pertama':
+              case 'fungsional_ahli_muda':
+              case 'administrasi':
+              default: return 58;
+            }
+          };
+          const birth = new Date(emp.birthDate);
+          const now = new Date();
+          const bup = getBUP(emp.jobType);
+          let years = bup - (now.getFullYear() - birth.getFullYear());
+          let months = birth.getMonth() - now.getMonth();
+          let days = birth.getDate() - now.getDate();
+          if (days < 0) { months--; days += 30; }
+          if (months < 0) { years--; months += 12; }
+          if (years < 0) return '0 tahun 0 bulan';
+          return `${years} tahun ${months} bulan`;
+        })(),
+        emp.gender === 'male' ? 'Laki-laki' : emp.gender === 'female' ? 'Perempuan' : '-',
+      ]);
+      autoTable(doc, {
+        head: headers,
+        body: data,
+        startY: 48,
+        styles: { fontSize: 7, halign: 'center' },
+        headStyles: { fillColor: [22, 160, 133], halign: 'center' },
+        bodyStyles: { halign: 'center' },
+        margin: { left: 40, right: 40 },
+        tableWidth: 'wrap',
+      });
+      doc.save(`Daftar_Pegawai_${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err) {
+      alert('Gagal mengekspor PDF.');
+      console.error(err);
+    } finally {
       setExportLoading(false);
       setShowExportMenu(false);
     }
   };
 
-  // Function to export employee data to Word
+  // Perbaiki ekspor Word agar sama dengan PDF dan rata tengah
   const exportToWord = () => {
     setExportLoading(true);
-    
-    // Use all employees data instead of just filtered data
     const dataToExport = employees;
-    
     if (dataToExport.length === 0) {
-      alert(t('no_employees_data_for_export'));
+      alert('Tidak ada data pegawai untuk diekspor!');
       setExportLoading(false);
       setShowExportMenu(false);
       return;
     }
-    
-    // Create HTML content for Word document with all fields
+    const headers = [
+      'Nama',
+      'NIP',
+      'Jabatan',
+      'Pangkat/Golongan',
+      'Unit Kerja',
+      'Jenis Kepegawaian',
+      'Umur',
+      'Masa Kerja',
+      'Sisa Masa Kerja',
+      'Jenis Kelamin',
+    ];
     let htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -469,77 +511,95 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
         <style>
           body { font-family: 'Calibri', sans-serif; margin: 2cm; }
           h1 { color: #2563eb; text-align: center; margin-bottom: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th { background-color: #f3f4f6; text-align: left; padding: 8px; border: 1px solid #e5e7eb; }
-          td { padding: 8px; border: 1px solid #e5e7eb; }
-          .header { display: flex; align-items: center; justify-content: space-between; }
-          .footer { text-align: center; font-size: 12px; color: #6b7280; margin-top: 30px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; text-align: center; }
+          th { background-color: #16a085; color: #fff; text-align: center; padding: 8px; border: 1px solid #e5e7eb; }
+          td { padding: 8px; border: 1px solid #e5e7eb; text-align: center; }
         </style>
       </head>
       <body>
         <h1>Daftar Lengkap Pegawai</h1>
-        <p>Tanggal: ${new Date().toLocaleDateString('id-ID')}</p>
         <table>
           <thead>
             <tr>
-              <th>Nama</th>
-              <th>NIP</th>
-              <th>Gender</th>
-              <th>Tanggal Lahir</th>
-              <th>Tipe Pegawai</th>
-              <th>Jabatan</th>
-              <th>Unit Kerja</th>
-              <th>Golongan</th>
-              <th>Status</th>
-              <th>Pendidikan</th>
-              <th>Email</th>
-              <th>No. Telepon</th>
+              ${headers.map(h => `<th>${h}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
     `;
-    
-    dataToExport.forEach(employee => {
+    dataToExport.forEach(emp => {
       htmlContent += `
         <tr>
-          <td>${employee.name || ''}</td>
-          <td>${employee.nip || ''}</td>
-          <td>${employee.gender === 'male' ? 'Laki-laki' : employee.gender === 'female' ? 'Perempuan' : ''}</td>
-          <td>${employee.birthDate || ''}</td>
-          <td>${employee.employeeType || ''}</td>
-          <td>${employee.position || ''}</td>
-          <td>${employee.workUnit || ''}</td>
-          <td>${employee.rank || ''}</td>
-          <td>${employee.status || ''}</td>
-          <td>${employee.educationLevel || ''} - ${employee.educationMajor || ''}</td>
-          <td>${employee.email || ''}</td>
-          <td>${employee.phoneNumber || ''}</td>
+          <td>${emp.name || '-'}</td>
+          <td>${emp.nip || '-'}</td>
+          <td>${emp.position || '-'}</td>
+          <td>${emp.rank || '-'}</td>
+          <td>${emp.workUnit || '-'}</td>
+          <td>${emp.employeeType || '-'}</td>
+          <td>${(() => {
+            if (!emp.birthDate) return '-';
+            const birth = new Date(emp.birthDate);
+            const now = new Date();
+            let years = now.getFullYear() - birth.getFullYear();
+            let months = now.getMonth() - birth.getMonth();
+            let days = now.getDate() - birth.getDate();
+            if (days < 0) { months--; days += 30; }
+            if (months < 0) { years--; months += 12; }
+            return `${years} tahun ${months} bulan`;
+          })()}</td>
+          <td>${(() => {
+            const start = emp.appointmentDate || emp.joinDate;
+            if (!start) return '-';
+            const startDate = new Date(start);
+            const now = new Date();
+            let years = now.getFullYear() - startDate.getFullYear();
+            let months = now.getMonth() - startDate.getMonth();
+            let days = now.getDate() - startDate.getDate();
+            if (days < 0) { months--; days += 30; }
+            if (months < 0) { years--; months += 12; }
+            return `${years} tahun ${months} bulan`;
+          })()}</td>
+          <td>${(() => {
+            if (!emp.birthDate || !emp.jobType) return '-';
+            const getBUP = (jobType: string) => {
+              switch (jobType) {
+                case 'pimpinan_tinggi_madya':
+                case 'pimpinan_tinggi_pratama':
+                case 'fungsional_ahli_madya': return 60;
+                case 'fungsional_ahli_utama': return 65;
+                case 'fungsional_ahli_pertama':
+                case 'fungsional_ahli_muda':
+                case 'administrasi':
+                default: return 58;
+              }
+            };
+            const birth = new Date(emp.birthDate);
+            const now = new Date();
+            const bup = getBUP(emp.jobType);
+            let years = bup - (now.getFullYear() - birth.getFullYear());
+            let months = birth.getMonth() - now.getMonth();
+            let days = birth.getDate() - now.getDate();
+            if (days < 0) { months--; days += 30; }
+            if (months < 0) { years--; months += 12; }
+            if (years < 0) return '0 tahun 0 bulan';
+            return `${years} tahun ${months} bulan`;
+          })()}</td>
+          <td>${emp.gender === 'male' ? 'Laki-laki' : emp.gender === 'female' ? 'Perempuan' : '-'}</td>
         </tr>
       `;
     });
-    
     htmlContent += `
           </tbody>
         </table>
-        <div class="footer">
-          <p>Data lengkap diambil pada tanggal ${new Date().toLocaleDateString('id-ID')}</p>
-        </div>
       </body>
       </html>
     `;
-    
-    // Create a blob and download link
     const blob = new Blob([htmlContent], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    
-    // Set download attributes and trigger download
     link.setAttribute('href', url);
-    link.setAttribute('download', `employee-data-complete-${new Date().toISOString().slice(0, 10)}.doc`);
+    link.setAttribute('download', `Daftar_Pegawai_${new Date().toISOString().slice(0, 10)}.doc`);
     document.body.appendChild(link);
     link.click();
-    
-    // Clean up
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     setExportLoading(false);
@@ -699,13 +759,13 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Sidebar activeItem="employees" onLogout={onLogout} />
+    <div className="flex">
+      <Sidebar onLogout={onLogout} />
       
-      <div className="w-full min-h-screen">
+      <div className={`flex-1 transition-all duration-400 ease-out transform-gpu ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <Header title={t('employee_list')} onLogout={onLogout} />
         
-        <div className="mx-auto px-4 pt-24 pb-8 lg:ml-28 lg:mr-6 max-w-7xl">
+        <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
           {/* Notification */}
           {notification && (
             <div className={`mb-4 p-3 rounded-md text-sm flex items-center ${
@@ -933,7 +993,7 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
             {!loading && !error && viewMode === 'table' ? (
               /* Employees Table with improved spacing */
               <div className="w-full">
-                <div className="overflow-x-auto">
+                <div id="employee-table-area" className="overflow-x-auto">
                   <table className="employee-table w-full table-fixed border-collapse text-sm">
                     <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
@@ -952,7 +1012,7 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[15%] hide-sm">
                           {t('employee_status')}
                         </th>
-                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[10%]">
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-[10%]">
                           {t('actions')}
                         </th>
                       </tr>
@@ -979,8 +1039,8 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
                           <td className="px-6 py-4 whitespace-nowrap hide-sm">
                             {formatStatus(employee.status)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right font-medium">
-                            <div className="flex justify-end space-x-2">
+                          <td className="px-6 py-4 whitespace-nowrap text-left font-medium">
+                            <div className="flex space-x-2">
                               <button 
                                 onClick={() => handleViewEmployee(employee)}
                                 className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"

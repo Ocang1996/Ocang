@@ -1,15 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Download, FileText, FileSpreadsheet, FileImage, PresentationIcon, X } from 'lucide-react';
 import { useEmployees } from '../../lib/EmployeeContext';
 import {
-  exportToExcel,
-  exportToPDF,
-  exportToWord,
-  exportToPPTX,
   downloadChartAsImage,
   generateReportFromEmployeeData
 } from './ReportsUtil';
 import { useTranslation } from '../../lib/useTranslation';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
+import pptxgen from 'pptxgenjs';
 
 interface ReportExportMenuProps {
   reportId: string;
@@ -28,29 +29,33 @@ interface FormatOption {
   fileExtension: string;
 }
 
+interface ReportData {
+  [key: string]: string | number;
+}
+
 const ReportExportMenu: React.FC<ReportExportMenuProps> = ({
   reportId,
   reportType,
   department = 'Semua Unit',
   period = 'Seluruh Periode',
   chartRef,
-  data = [],
   className = ''
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedReportType, setSelectedReportType] = useState(reportType || 'employee-count');
-  const menuRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   
   const { employees, loading } = useEmployees();
+  const [lastSelectedFormat, setLastSelectedFormat] = useState<string>('');
 
   const formatOptions: FormatOption[] = [
     { id: 'excel', name: 'Excel', icon: <FileSpreadsheet size={18} className="text-green-600" />, fileExtension: '.xlsx' },
-    { id: 'pdf', name: 'PDF', icon: <FileText size={18} className="text-red-600" />, fileExtension: '.pdf' },
     { id: 'word', name: 'Word', icon: <FileText size={18} className="text-blue-700" />, fileExtension: '.docx' },
-    { id: 'pptx', name: 'PowerPoint', icon: <PresentationIcon size={18} className="text-orange-600" />, fileExtension: '.pptx' },
-    { id: 'image', name: t('image_formats'), icon: <FileImage size={18} className="text-purple-600" />, fileExtension: '.png' }
+    { id: 'pptx', name: 'PPTX', icon: <PresentationIcon size={18} className="text-orange-600" />, fileExtension: '.pptx' },
+    { id: 'image', name: t('image_formats'), icon: <FileImage size={18} className="text-purple-600" />, fileExtension: '.png' },
+    { id: 'csv', name: 'CSV', icon: <FileText size={18} className="text-gray-700" />, fileExtension: '.csv' },
+    { id: 'pdf', name: 'PDF', icon: <FileText size={18} className="text-red-600" />, fileExtension: '.pdf' }
   ];
 
   const reportTypes = [
@@ -95,7 +100,7 @@ const ReportExportMenu: React.FC<ReportExportMenuProps> = ({
     try {
       const elementId = chartRef?.current?.id || reportId;
       
-      const reportData = generateReportFromEmployeeData(selectedReportType, employees);
+      const reportData = generateReportFromEmployeeData(selectedReportType, employees) as ReportData[];
       
       const reportMetadata = {
         title: getReportTitle(),
@@ -106,138 +111,284 @@ const ReportExportMenu: React.FC<ReportExportMenuProps> = ({
       };
       
       if (formatId === 'pdf') {
-        let htmlContent = `
+        const doc = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        // Add title
+        doc.setFontSize(16);
+        doc.text(reportMetadata.title, doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+        // Add period and department info
+        doc.setFontSize(10);
+        doc.text(`Periode: ${reportMetadata.period}`, 14, 30);
+        doc.text(`Unit: ${reportMetadata.department}`, 14, 35);
+
+        // Prepare table data
+        const tableData = reportData.map((item: ReportData) => Object.values(item));
+        const headers = Object.keys(reportData[0]);
+
+        // Add table
+        autoTable(doc, {
+          head: [headers],
+          body: tableData,
+          startY: 40,
+          margin: { top: 40 },
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            overflow: 'linebreak'
+          },
+          headStyles: {
+            fillColor: [41, 128, 185],
+            textColor: 255,
+            fontSize: 9,
+            fontStyle: 'bold'
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245]
+          },
+          columnStyles: {
+            0: { cellWidth: 'auto' },
+            1: { cellWidth: 'auto' },
+            2: { cellWidth: 'auto' }
+          }
+        });
+
+        // Save the PDF
+        const fileName = `${reportMetadata.title}_${new Date().toISOString().split('T')[0]}`;
+        doc.save(`${fileName}.pdf`);
+      } else if (formatId === 'word') {
+        const htmlContent = `
           <!DOCTYPE html>
           <html>
           <head>
             <meta charset="UTF-8">
-            <title>Laporan ASN</title>
+            <title>${reportMetadata.title}</title>
             <style>
-              body { font-family: Arial, sans-serif; margin: 20px; }
-              h1 { color: #2563eb; }
-              h2 { color: #1e40af; margin-top: 20px; }
-              table { border-collapse: collapse; width: 100%; margin-top: 10px; margin-bottom: 30px; }
-              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-              th { background-color: #f2f7ff; }
-              .header { display: flex; align-items: center; justify-content: space-between; }
-              .logo { font-weight: bold; font-size: 24px; color: #1e40af; }
-              .date { font-style: italic; }
+              body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                font-size: 10pt;
+              }
+              h1 {
+                text-align: center;
+                color: #2563eb;
+                font-size: 16pt;
+                margin-bottom: 20px;
+              }
+              .info {
+                margin-bottom: 20px;
+                font-size: 9pt;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+              }
+              th, td {
+                border: 1px solid #ddd;
+                padding: 6px;
+                text-align: left;
+                font-size: 9pt;
+              }
+              th {
+                background-color: #f2f7ff;
+                font-weight: bold;
+              }
+              tr:nth-child(even) {
+                background-color: #f9f9f9;
+              }
             </style>
           </head>
           <body>
-            <div class="header">
-              <div class="logo">Laporan ${getReportTitle()}</div>
-              <div class="date">Tanggal: ${reportMetadata.date}</div>
+            <h1>${reportMetadata.title}</h1>
+            <div class="info">
+              <p>Periode: ${reportMetadata.period}</p>
+              <p>Unit: ${reportMetadata.department}</p>
             </div>
-            <p>Total Pegawai: <strong>${employees.length}</strong></p>
-        `;
-        
-        if (selectedReportType === 'gender-distribution' || selectedReportType === 'full-report') {
-          const male = employees.filter(emp => emp.gender === 'male').length;
-          const female = employees.filter(emp => emp.gender === 'female').length;
-          
-          htmlContent += `
-            <h2>Distribusi Gender</h2>
             <table>
-              <tr>
-                <th>Gender</th>
-                <th>Jumlah</th>
-                <th>Persentase</th>
-              </tr>
-              <tr>
-                <td>Laki-laki</td>
-                <td>${male}</td>
-                <td>${((male / employees.length) * 100).toFixed(2)}%</td>
-              </tr>
-              <tr>
-                <td>Perempuan</td>
-                <td>${female}</td>
-                <td>${((female / employees.length) * 100).toFixed(2)}%</td>
-              </tr>
-            </table>
-          `;
-        }
-        
-        if (selectedReportType === 'employee-count' || selectedReportType === 'full-report') {
-          const typeCount: Record<string, number> = {
-            pns: 0,
-            p3k: 0,
-            nonAsn: 0,
-            pppk: 0,
-            honorer: 0
-          };
-          
-          employees.forEach(emp => {
-            if (emp.employeeType) {
-              typeCount[emp.employeeType as keyof typeof typeCount] = 
-                (typeCount[emp.employeeType as keyof typeof typeCount] || 0) + 1;
-            }
-          });
-          
-          htmlContent += `
-            <h2>Jumlah Pegawai Berdasarkan Jenis</h2>
-            <table>
-              <tr>
-                <th>Jenis Pegawai</th>
-                <th>Jumlah</th>
-                <th>Persentase</th>
-              </tr>
-          `;
-          
-          const typeLabels: Record<string, string> = {
-            pns: 'PNS',
-            p3k: 'P3K',
-            nonAsn: 'Non ASN',
-            pppk: 'PPPK',
-            honorer: 'Honorer'
-          };
-          
-          Object.entries(typeCount).forEach(([type, count]) => {
-            if (count > 0) {
-              htmlContent += `
+              <thead>
                 <tr>
-                  <td>${typeLabels[type] || type}</td>
-                  <td>${count}</td>
-                  <td>${((count / employees.length) * 100).toFixed(2)}%</td>
+                  ${Object.keys(reportData[0]).map(header => `<th>${header}</th>`).join('')}
                 </tr>
-              `;
-            }
-          });
-          
-          htmlContent += `</table>`;
-        }
-        
-        htmlContent += `
-            <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; font-size: 12px;">
-              <p>Laporan ini dibuat secara otomatis dari sistem Dashboard Pegawai pada ${reportMetadata.date}.</p>
-            </div>
+              </thead>
+              <tbody>
+                ${reportData.map(row => `
+                  <tr>
+                    ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
           </body>
           </html>
         `;
+
+        const blob = new Blob([htmlContent], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${reportMetadata.title}_${new Date().toISOString().split('T')[0]}.doc`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else if (formatId === 'excel') {
+        const worksheet = XLSX.utils.json_to_sheet(reportData);
         
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.write(htmlContent);
-          printWindow.document.close();
+        // Set column widths
+        const colWidths = Object.keys(reportData[0]).map(key => ({
+          wch: Math.max(key.length, 15)
+        }));
+        worksheet['!cols'] = colWidths;
+
+        // Add title and metadata
+        XLSX.utils.sheet_add_aoa(worksheet, [[reportMetadata.title]], { origin: 'A1' });
+        XLSX.utils.sheet_add_aoa(worksheet, [
+          ['Periode:', reportMetadata.period],
+          ['Unit:', reportMetadata.department]
+        ], { origin: 'A2' });
+
+        // Add empty row before data
+        XLSX.utils.sheet_add_aoa(worksheet, [['']], { origin: 'A4' });
+
+        // Create workbook and add worksheet
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Laporan');
+
+        // Save file
+        const fileName = `${reportMetadata.title}_${new Date().toISOString().split('T')[0]}`;
+        XLSX.writeFile(workbook, `${fileName}.xlsx`);
+      } else if (formatId === 'csv') {
+        // Add title and metadata as comments
+        let csvContent = `# ${reportMetadata.title}\n`;
+        csvContent += `# Periode: ${reportMetadata.period}\n`;
+        csvContent += `# Unit: ${reportMetadata.department}\n\n`;
+
+        // Add headers
+        const headers = Object.keys(reportData[0]);
+        csvContent += headers.join(',') + '\n';
+
+        // Add data rows
+        reportData.forEach(row => {
+          const values = Object.values(row).map(value => {
+            // Escape commas and quotes in values
+            if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+              return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+          });
+          csvContent += values.join(',') + '\n';
+        });
+
+        // Create and download file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${reportMetadata.title}_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else if (formatId === 'pptx') {
+        const pptx = new pptxgen();
+        
+        // Set presentation properties
+        pptx.author = 'Dashboard ASN';
+        pptx.company = 'BSKDN';
+        pptx.title = reportMetadata.title;
+        
+        // Add title slide
+        const titleSlide = pptx.addSlide();
+        titleSlide.background = { color: 'FFFFFF' };
+        titleSlide.addText(reportMetadata.title, {
+          x: 0.5,
+          y: 1,
+          w: '90%',
+          h: 1,
+          fontSize: 24,
+          color: '2563EB',
+          bold: true,
+          align: 'center'
+        });
+        
+        titleSlide.addText([
+          { text: 'Periode: ', options: { bold: true } },
+          { text: reportMetadata.period },
+          { text: '\nUnit: ', options: { bold: true } },
+          { text: reportMetadata.department }
+        ], {
+          x: 0.5,
+          y: 2,
+          w: '90%',
+          h: 1,
+          fontSize: 14,
+          color: '666666'
+        });
+
+        // Add chart slide
+        const chartSlide = pptx.addSlide();
+        chartSlide.background = { color: 'FFFFFF' };
+
+        // Capture chart as image
+        if (chartRef?.current) {
+          const canvas = await html2canvas(chartRef.current, {
+            scale: 2,
+            backgroundColor: '#FFFFFF'
+          });
           
-          setTimeout(() => {
-            printWindow.print();
-            setTimeout(() => printWindow.close(), 1000);
-          }, 500);
-        } else {
-          alert('Silakan aktifkan popup untuk mengunduh PDF');
+          const imageData = canvas.toDataURL('image/png');
+          
+          // Add chart image to slide
+          chartSlide.addImage({
+            data: imageData,
+            x: 0.5,
+            y: 0.5,
+            w: '90%',
+            h: '70%'
+          });
         }
+
+        // Add data table slide
+        const tableSlide = pptx.addSlide();
+        tableSlide.background = { color: 'FFFFFF' };
+
+        // Prepare table data with proper types
+        const headers = Object.keys(reportData[0]).map(header => ({
+          text: header,
+          options: { bold: true, fill: { type: 'solid' as const, color: 'F3F4F6' } }
+        }));
+
+        const rows = reportData.map(row => 
+          Object.values(row).map(value => ({
+            text: String(value),
+            options: { fill: { type: 'solid' as const, color: 'FFFFFF' } }
+          }))
+        );
+
+        const tableData = [headers, ...rows];
+
+        // Add table to slide
+        tableSlide.addTable(tableData, {
+          x: 0.5,
+          y: 0.5,
+          w: '90%',
+          colW: [3, 2, 2],
+          border: { type: 'solid', pt: 1, color: 'E5E7EB' },
+          align: 'left',
+          fontSize: 10,
+          color: '1F2937'
+        });
+
+        // Save the presentation
+        const fileName = `${reportMetadata.title}_${new Date().toISOString().split('T')[0]}`;
+        await pptx.writeFile({ fileName: `${fileName}.pptx` });
       } else {
         switch (formatId) {
-          case 'excel':
-            exportToExcel(reportData, selectedReportType, department, period, reportMetadata);
-            break;
-          case 'word':
-            await exportToWord(elementId, selectedReportType, department, period, reportData, reportMetadata);
-            break;
-          case 'pptx':
-            await exportToPPTX(elementId, selectedReportType, department, period, reportData, reportMetadata);
-            break;
           case 'image':
             await downloadChartAsImage(elementId, selectedReportType);
             break;
@@ -246,11 +397,12 @@ const ReportExportMenu: React.FC<ReportExportMenuProps> = ({
         }
       }
     } catch (error) {
-      console.error('Error exporting report:', error);
-      alert('Terjadi kesalahan saat mengekspor laporan. Silakan coba lagi.');
+      console.error('Export error:', error);
+      alert(t('error_general'));
     } finally {
       setIsExporting(false);
       setIsOpen(false);
+      setLastSelectedFormat(formatId);
     }
   };
 
@@ -258,14 +410,14 @@ const ReportExportMenu: React.FC<ReportExportMenuProps> = ({
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-800/40 text-emerald-700 dark:text-emerald-300 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+        className="flex items-center space-x-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-800/40 text-emerald-700 dark:text-emerald-300 rounded-lg px-6 py-2 min-w-[120px] text-base font-medium transition-colors"
       >
         <Download size={16} className="mr-1" />
         <span>Ekspor Data</span>
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 animate-fadeIn">
+        <div className="absolute top-full right-0 mt-2 w-full min-w-[200px] max-w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 animate-fadeIn">
           <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Ekspor Laporan</h3>
             <button
@@ -293,20 +445,20 @@ const ReportExportMenu: React.FC<ReportExportMenuProps> = ({
           </div>
 
           <div className="p-3">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">
               Pilih format untuk mengunduh laporan:
             </p>
             
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 max-h-72 overflow-y-auto">
               {formatOptions.map(format => (
                 <button
                   key={format.id}
                   onClick={() => handleExport(format.id)}
                   disabled={isExporting}
-                  className="flex items-center space-x-2 rounded-md border border-gray-200 dark:border-gray-700 p-2 text-gray-800 dark:text-gray-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors text-sm"
+                  className={`flex items-center space-x-2 rounded-md border border-gray-200 dark:border-gray-700 p-3 text-gray-800 dark:text-gray-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors text-base font-medium w-full text-left hover:font-bold ${lastSelectedFormat === format.id ? 'bg-emerald-100 dark:bg-emerald-900/40 font-bold' : ''}`}
                 >
                   {format.icon}
-                  <span>{format.name}</span>
+                  <span className="truncate">{format.name}</span>
                 </button>
               ))}
             </div>

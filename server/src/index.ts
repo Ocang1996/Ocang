@@ -4,11 +4,11 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
 // Routes
-import authRoutes from './routes/auth.js';
-import employeeRoutes from './routes/employees.js';
-import statsRoutes from './routes/stats.js';
-import userRoutes from './routes/users.js';
-import workUnitRoutes from './routes/workUnits.js';
+import authRoutes from './routes/auth';
+import employeeRoutes from './routes/employees';
+import statsRoutes from './routes/stats';
+import userRoutes from './routes/users';
+import workUnitRoutes from './routes/workUnits';
 
 // Load environment variables
 dotenv.config();

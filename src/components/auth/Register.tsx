@@ -244,6 +244,7 @@ const Register = ({ onRegister }: RegisterProps) => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm"
                   placeholder="Masukkan password"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -275,6 +276,7 @@ const Register = ({ onRegister }: RegisterProps) => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm"
                   placeholder="Konfirmasi password"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"

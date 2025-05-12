@@ -6,6 +6,7 @@ export interface IEmployee extends Document {
   gender: 'male' | 'female';
   birthDate: Date;
   joinDate: Date;
+  appointmentDate?: Date; // TMT Pengangkatan
   employeeType: 'pns' | 'p3k' | 'nonAsn';
   workUnit: string;
   subUnit?: string;
@@ -49,6 +50,12 @@ const employeeSchema = new mongoose.Schema<IEmployee>(
     joinDate: {
       type: Date,
       required: true,
+    },
+    appointmentDate: {
+      type: Date,
+      required: function(this: IEmployee) {
+        return this.employeeType === 'pns' || this.employeeType === 'p3k';
+      }
     },
     employeeType: {
       type: String,
@@ -122,6 +129,47 @@ employeeSchema.pre('save', function(this: IEmployee, next: mongoose.CallbackWith
     );
   }
   next();
+});
+
+// Virtual for calculating service period
+employeeSchema.virtual('servicePeriod').get(function(this: IEmployee) {
+  const startDate = this.employeeType === 'nonAsn' ? this.joinDate : this.appointmentDate;
+  if (!startDate) return null;
+
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - startDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  const years = Math.floor(diffDays / 365);
+  const months = Math.floor((diffDays % 365) / 30);
+  const days = diffDays % 30;
+
+  return {
+    years,
+    months,
+    days,
+    formatted: `${years} tahun ${months} bulan ${days} hari`
+  };
+});
+
+// Virtual for calculating remaining service period (only for ASN)
+employeeSchema.virtual('remainingServicePeriod').get(function(this: IEmployee) {
+  if (this.employeeType === 'nonAsn' || !this.retirementDate) return null;
+
+  const now = new Date();
+  const diffTime = Math.abs(this.retirementDate.getTime() - now.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  const years = Math.floor(diffDays / 365);
+  const months = Math.floor((diffDays % 365) / 30);
+  const days = diffDays % 30;
+
+  return {
+    years,
+    months,
+    days,
+    formatted: `${years} tahun ${months} bulan ${days} hari`
+  };
 });
 
 const Employee = mongoose.model<IEmployee>('Employee', employeeSchema);

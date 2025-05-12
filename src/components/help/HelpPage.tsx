@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Sidebar from '../layout/Sidebar';
 import Header from '../layout/Header';
+import { useSidebar } from '../../lib/SidebarContext';
 import { HelpCircle, Search, FileText, Play, Book, MessageCircle, LifeBuoy, ExternalLink, Phone, Mail, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTheme } from '../../lib/ThemeContext';
 import { useTranslation } from '../../lib/useTranslation';
@@ -12,6 +13,7 @@ interface HelpPageProps {
 const HelpPage = ({ onLogout }: HelpPageProps) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const { expanded } = useSidebar(); // Menggunakan sidebar context
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
@@ -44,13 +46,13 @@ const HelpPage = ({ onLogout }: HelpPageProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex">
       <Sidebar activeItem="help" onLogout={onLogout} />
       
-      <div className="w-full min-h-screen">
+      <div className={`flex-1 transition-all duration-400 ease-out transform-gpu ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <Header title={t('nav_help')} onLogout={onLogout} />
         
-        <div className="mx-auto px-4 pt-24 pb-8 lg:ml-28 lg:mr-6 max-w-7xl">
+        <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
           <div className="mb-6 mt-2">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
               {t('nav_help')}

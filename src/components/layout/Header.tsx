@@ -82,11 +82,14 @@ const Header = ({ title, onLogout }: HeaderProps) => {
   };
 
   return (
-    <header className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg shadow-sm px-6 py-3 flex items-center justify-between fixed top-4 left-6 right-6 lg:left-28 z-50 border border-gray-200/30 dark:border-gray-700/30 rounded-xl">
-      <div>
-        <h1 className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
-          EmpDash
-        </h1>
+    <header className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg shadow-sm px-6 py-3 flex items-center justify-between fixed top-4 left-6 right-6 z-50 border border-gray-200/30 dark:border-gray-700/30 rounded-xl">
+      <div className="pl-2 md:pl-4">
+        <div className="flex items-center">
+          {/* Logo dihapus sementara */}
+          <h1 className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
+            EmpDash
+          </h1>
+        </div>
       </div>
       
       <div className="flex items-center space-x-3">
@@ -112,13 +115,13 @@ const Header = ({ title, onLogout }: HeaderProps) => {
           </button>
           
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-72 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg py-2 z-10 border border-gray-200/30 dark:border-gray-700/30">
-              <div className="p-3 border-b border-gray-200/50 dark:border-gray-700/50">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('notifications')}
-                </h3>
-              </div>
-              <LoginNotificationComponent onNotificationsChanged={refreshUnreadStatus} />
+            <div className="absolute right-0 mt-2 w-96 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg py-2 z-10 border border-gray-200/30 dark:border-gray-700/30">
+              <LoginNotificationComponent 
+                onNotificationsChanged={refreshUnreadStatus} 
+                showExpandedByDefault={true} 
+                className="w-full"
+                onClose={() => setShowNotifications(false)}
+              />
             </div>
           )}
         </div>

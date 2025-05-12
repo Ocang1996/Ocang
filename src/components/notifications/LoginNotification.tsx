@@ -13,13 +13,17 @@ import {
 interface LoginNotificationProps {
   className?: string;
   onNotificationsChanged?: () => void;
+  showExpandedByDefault?: boolean;
+  onClose?: () => void;
 }
 
 const LoginNotificationComponent: React.FC<LoginNotificationProps> = ({ 
   className = '',
-  onNotificationsChanged
+  onNotificationsChanged,
+  showExpandedByDefault = false,
+  onClose
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(showExpandedByDefault);
   const [notifications, setNotifications] = useState<LoginNotification[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
 
@@ -76,9 +80,19 @@ const LoginNotificationComponent: React.FC<LoginNotificationProps> = ({
   };
 
   const refreshNotifications = () => {
+    // Tampilkan efek loading saat refresh
+    const refreshButton = document.getElementById('refresh-button');
+    if (refreshButton) {
+      refreshButton.classList.add('animate-spin');
+      setTimeout(() => {
+        refreshButton.classList.remove('animate-spin');
+      }, 500);
+    }
+    
     loadNotifications();
     markNotificationsAsRead();
     setHasUnread(false);
+    
     // Notify parent about notification changes
     if (onNotificationsChanged) {
       onNotificationsChanged();
@@ -87,20 +101,22 @@ const LoginNotificationComponent: React.FC<LoginNotificationProps> = ({
 
   return (
     <div className={`relative ${className}`}>
-      {/* Bell icon with indicator */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-        aria-label="Notifikasi Login"
-      >
-        <Bell size={20} />
-        {hasUnread && (
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
-        )}
-      </button>
+      {/* Jika tidak dalam mode expanded by default, tampilkan ikon bel */}
+      {!showExpandedByDefault && (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="relative p-2 text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+          aria-label="Notifikasi Login"
+        >
+          <Bell size={20} />
+          {hasUnread && (
+            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+          )}
+        </button>
+      )}
 
-      {/* Dropdown */}
-      {isOpen && (
+      {/* Dropdown - tampilkan langsung jika showExpandedByDefault=true atau jika isOpen=true */}
+      {(showExpandedByDefault || isOpen) && (
         <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
           {/* Header */}
           <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -110,15 +126,19 @@ const LoginNotificationComponent: React.FC<LoginNotificationProps> = ({
             </h3>
             <div className="flex space-x-1">
               <button
+                id="refresh-button"
                 onClick={refreshNotifications}
-                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
                 title="Muat ulang"
               >
                 <RefreshCw size={14} />
               </button>
               <button
-                onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => {
+                  setIsOpen(false);
+                  if (onClose) onClose();
+                }}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
               >
                 <X size={16} />
               </button>

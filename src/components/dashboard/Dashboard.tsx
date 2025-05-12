@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Sidebar from '../layout/Sidebar';
 import Header from '../layout/Header';
 import StatCard from './StatCard';
-import { ArrowUpRight, Users, UserPlus, FileText, Briefcase, CalendarClock, Award } from 'lucide-react';
+import { ArrowUpRight, Users, UserPlus, FileText, Briefcase, CalendarClock, Award, CalendarDays } from 'lucide-react';
 import EmployeeTypeChart from '../charts/EmployeeTypeChart';
 import GenderDistributionChart from '../charts/GenderDistributionChart';
 import AgeDistributionChart from '../charts/AgeDistributionChart';
@@ -17,6 +17,8 @@ import { isDarkMode } from '../../lib/theme';
 import { useTheme } from '../../lib/ThemeContext';
 import { useTranslation } from '../../lib/useTranslation';
 import { useEmployees, EmployeeProvider } from '../../lib/EmployeeContext';
+import { useSidebar } from '../../lib/SidebarContext';
+import { useLeave } from '../../lib/LeaveContext';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -50,6 +52,12 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
   
   // Get employee data from context
   const { employees, loading: employeesLoading, error: employeesError, syncStatus } = useEmployees();
+  
+  // Get leave data from context
+  const { leaveData, loading: leaveLoading } = useLeave();
+  
+  // Get sidebar state for responsive layout
+  const { expanded } = useSidebar();
   
   // Get theme and translation functions
   const { isDark, language } = useTheme();
@@ -1084,18 +1092,35 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
     }
   }, [employees.length, updateAgeDistribution]);
   
+  // Update stats berdasarkan data cuti aktual dari LeaveContext
+  useEffect(() => {
+    if (leaveData && leaveData.length > 0) {
+      // Hitung jumlah cuti aktif (Pending dan Approved yang belum selesai)
+      const activeLeaveCount = leaveData.filter(leave => 
+        leave.status === 'Pending' || 
+        (leave.status === 'Approved' && new Date(leave.endDate) >= new Date())
+      ).length;
+      
+      // Update stats dengan data cuti aktual
+      setStats(prevStats => ({
+        ...prevStats,
+        pendingApprovals: activeLeaveCount
+      }));
+    }
+  }, [leaveData]);
+  
   // Update bagian render dashboard dengan dark mode
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Sidebar onLogout={onLogout} userRole={userRole} />
+    <div className="flex">
+      <Sidebar onLogout={onLogout} />
       
-      <div className="w-full min-h-screen">
+      <div className={`flex-1 transition-all duration-400 ease-out transform-gpu ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <Header 
           title={t('dashboard_title')} 
           onLogout={onLogout} 
         />
         
-        <div className="mx-auto px-4 pt-24 pb-8 lg:ml-28 lg:mr-6 max-w-7xl">
+        <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
           <div className="mb-6 mt-2">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
               {t('dashboard_title')}
@@ -1156,13 +1181,15 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
                       period={language === 'id' ? "bulan" : "month"}
                     />
                     
-                    <StatCard 
-                      title={t('total_departments')}
-                      value={stats.totalDepartments} 
-                      icon={<Briefcase size={20} />}
-                      change={0}
-                      period={language === 'id' ? "tahun" : "year"}
-                    />
+                    <div className="relative">
+                      <StatCard
+                        title="Cuti Pegawai"
+                        value={stats.pendingApprovals}
+                        icon={<CalendarDays size={20} className="text-emerald-600 dark:text-emerald-400" />}
+                        change={0}
+                        period={language === 'id' ? "bulan" : "month"}
+                      />
+                    </div>
                     
                     <StatCard
                       title={t('retirement_soon')}

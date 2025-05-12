@@ -8,6 +8,7 @@ import { addLoginNotification, getUserDeviceInfo } from '../../lib/notificationU
 import { useTheme } from '../../lib/ThemeContext';
 import { useTranslation } from '../../lib/useTranslation';
 import { authenticateUser, cleanupInvalidCredentials } from '../../lib/auth';
+import ForgotPasswordModal from './ForgotPasswordModal';
 
 interface LoginProps {
   onLogin: (username: string, password: string, role: UserRole) => boolean;
@@ -27,6 +28,7 @@ const Login = ({ onLogin }: LoginProps) => {
   const { language } = useTheme();
   const { t } = useTranslation();
   const usernameInputRef = useRef<HTMLInputElement>(null);
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   useEffect(() => {
     // Clean up invalid credentials when login page loads
@@ -164,6 +166,11 @@ const Login = ({ onLogin }: LoginProps) => {
     }
   };
 
+  const handleForgotPassword = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    setShowForgotModal(true);
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center p-6 bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:bg-gray-900 dark:bg-none relative">
       {/* Background pattern */}
@@ -226,26 +233,25 @@ const Login = ({ onLogin }: LoginProps) => {
                 {t('password')}
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock size={18} className="text-gray-400" />
-                </div>
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm"
+                  className="pl-3 pr-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm"
                   placeholder={language === 'id' ? "Masukkan password" : "Enter password"}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
                 >
                   {showPassword ? (
-                    <EyeOff size={18} className="text-gray-400 hover:text-emerald-500" />
+                    <EyeOff size={18} className="text-gray-600 hover:text-emerald-500 transition-colors" />
                   ) : (
-                    <Eye size={18} className="text-gray-400 hover:text-emerald-500" />
+                    <Eye size={18} className="text-gray-600 hover:text-emerald-500 transition-colors" />
                   )}
                 </button>
               </div>
@@ -296,7 +302,7 @@ const Login = ({ onLogin }: LoginProps) => {
               </div>
 
               <div className="text-sm">
-                <Link to="#" className="font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-500">
+                <Link to="#" className="font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-500" onClick={handleForgotPassword}>
                   {t('forgot_password')}
                 </Link>
               </div>
@@ -329,6 +335,8 @@ const Login = ({ onLogin }: LoginProps) => {
           </p>
         </div>
       </div>
+
+      <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} />
     </div>
   );
 };

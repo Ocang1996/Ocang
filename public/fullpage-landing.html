@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Landing Page - FullPage.js</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- fullPage.js CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/4.0.24/fullpage.min.css" />
+  <!-- Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    body {
+      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+      background: #e8f5e9;
+    }
+    .section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh !important;
+      width: 100vw;
+      flex-direction: column;
+      text-align: center;
+    }
+    .section-1 {
+      background: #e8f5e9;
+      color: #1b5e20;
+    }
+    .section-2 {
+      background: #a5d6a7;
+      color: #1b5e20;
+    }
+    .section-3 {
+      background: #66bb6a;
+      color: #fff;
+    }
+    .section-title {
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin: 0;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    @media (max-width: 600px) {
+      .section-title {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Logo dihapus sementara -->
+  <div id="fullpage">
+    <div class="section section-1">
+      <h1 class="section-title">Selamat Datang di Dashboard ASN</h1>
+    </div>
+    <div class="section section-2">
+      <h1 class="section-title">Visualisasi Data Pegawai Modern</h1>
+    </div>
+    <div class="section section-3">
+      <h1 class="section-title">Mudah, Aman, dan Informatif</h1>
+    </div>
+  </div>
+
+  <!-- fullPage.js JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/4.0.24/fullpage.min.js"></script>
+  <script>
+    new fullpage('#fullpage', {
+      autoScrolling: true,
+      navigation: true,
+      navigationPosition: 'right',
+      anchors: ['welcome', 'visualisasi', 'mudah-aman'],
+      navigationTooltips: ['Beranda', 'Visualisasi', 'Keunggulan'],
+      showActiveTooltip: true,
+      scrollingSpeed: 800,
+      fitToSection: true,
+      responsiveWidth: 600
+    });
+  </script>
+</body>
+</html> 
