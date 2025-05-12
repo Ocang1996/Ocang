@@ -1,6 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { isNonWorkingDay } from './dateUtils';
 import { addDays } from 'date-fns';
+import {
+  getLeaveData,
+  getLeaveQuotas,
+  addLeaveData as apiAddLeaveData,
+  updateLeaveData as apiUpdateLeaveData,
+  deleteLeaveData as apiDeleteLeaveData,
+  getLeaveQuotaByEmployeeAndYear,
+  updateLeaveQuota as apiUpdateLeaveQuota
+} from './leaveService';
 
 // Definisi tipe data cuti sesuai PP No. 11/2017 dan Peraturan BKN No. 7/2021
 export type LeaveType = 
@@ -70,66 +79,8 @@ export interface LeaveData {
   updatedAt: string;
 }
 
-// Data awal untuk contoh
-const initialLeaveData: LeaveData[] = [
-  {
-    id: '1',
-    employeeId: 1,
-    employeeNip: '197506152001121003',
-    employeeName: 'Dr. Ahmad Fauzi, S.T., M.T.',
-    leaveType: 'Tahunan',
-    duration: 4,
-    startDate: '2025-03-15',
-    endDate: '2025-03-18',
-    documentRequired: false,
-    reason: 'Cuti tahunan - SK No. 123/ASN/III/2025',
-    status: 'Completed',
-    inputBy: 'Admin Sistem',
-    year: 2025,
-    serviceYears: 24,
-    accumulatedFromPrevYear: false,
-    createdAt: '2025-03-10T00:00:00Z',
-    updatedAt: '2025-03-10T00:00:00Z'
-  },
-  {
-    id: '2',
-    employeeId: 2,
-    employeeNip: '198312102009022001',
-    employeeName: 'Indah Permata Sari, S.E.',
-    leaveType: 'Sakit',
-    duration: 2,
-    startDate: '2025-04-05',
-    endDate: '2025-04-06',
-    document: 'Surat dokter No. RS/MED/425/2025',
-    documentRequired: true,
-    reason: 'Sakit - Surat Dokter Rumah Sakit Medika',
-    status: 'Completed',
-    inputBy: 'Admin Sistem',
-    year: 2025,
-    serviceYears: 16,
-    createdAt: '2025-04-03T00:00:00Z',
-    updatedAt: '2025-04-03T00:00:00Z'
-  },
-  {
-    id: '3',
-    employeeId: 3,
-    employeeNip: '199006202015012005',
-    employeeName: 'Ratna Juwita, S.Sos.',
-    leaveType: 'Besar',
-    duration: 90,
-    startDate: '2025-05-01',
-    endDate: '2025-07-29',
-    documentRequired: false,
-    reason: 'Cuti besar - Ibadah Haji',
-    status: 'Approved',
-    approvedBy: 'Kepala Kantor',
-    inputBy: 'Admin Sistem',
-    year: 2025,
-    serviceYears: 10,
-    createdAt: '2025-04-15T00:00:00Z',
-    updatedAt: '2025-04-20T00:00:00Z'
-  }
-];
+// Data awal untuk contoh (kosong, akan diisi dari Supabase)
+const initialLeaveData: LeaveData[] = [];
 
 // Definisi tipe data jatah cuti untuk pegawai
 export interface LeaveQuota {
@@ -154,72 +105,8 @@ export interface LeaveQuota {
   updatedAt: string;
 }
 
-// Utility function moved to code where it's actively used
-
-// Data awal jatah cuti
-const initialLeaveQuotas: LeaveQuota[] = [
-  {
-    id: '1',
-    employeeId: 1,
-    employeeNip: '197506152001121003',
-    employeeName: 'Dr. Ahmad Fauzi, S.T., M.T.',
-    year: 2025,
-    annualQuota: 12,
-    annualUsed: 4,
-    annualRemaining: 8,
-    previousYearRemaining: 0,
-    totalAvailable: 12,
-    serviceYears: 24,
-    bigLeaveEligible: true,
-    bigLeaveStatus: false,
-    sickLeaveUsed: 0,
-    maternityLeaveUsed: 0,
-    importantLeaveUsed: 0,
-    createdAt: '2025-01-01T00:00:00Z',
-    updatedAt: '2025-03-18T00:00:00Z'
-  },
-  {
-    id: '2',
-    employeeId: 2,
-    employeeNip: '198312102009022001',
-    employeeName: 'Indah Permata Sari, S.E.',
-    year: 2025,
-    annualQuota: 12,
-    annualUsed: 0,
-    annualRemaining: 12,
-    previousYearRemaining: 0,
-    totalAvailable: 12,
-    serviceYears: 16,
-    bigLeaveEligible: true,
-    bigLeaveStatus: false,
-    sickLeaveUsed: 2,
-    maternityLeaveUsed: 0,
-    importantLeaveUsed: 0,
-    createdAt: '2025-01-01T00:00:00Z',
-    updatedAt: '2025-04-06T00:00:00Z'
-  },
-  {
-    id: '3',
-    employeeId: 3,
-    employeeNip: '199006202015012005',
-    employeeName: 'Ratna Juwita, S.Sos.',
-    year: 2025,
-    annualQuota: 0,
-    annualUsed: 0,
-    annualRemaining: 0,
-    previousYearRemaining: 0,
-    totalAvailable: 0,
-    serviceYears: 10,
-    bigLeaveEligible: true,
-    bigLeaveStatus: true,
-    lastBigLeaveYear: 2025,
-    sickLeaveUsed: 0,
-    maternityLeaveUsed: 0,
-    importantLeaveUsed: 0,
-    createdAt: '2025-01-01T00:00:00Z',
-    updatedAt: '2025-04-06T00:00:00Z'
-  }
-];
+// Data awal jatah cuti (kosong, akan diisi dari Supabase)
+const initialLeaveQuotas: LeaveQuota[] = [];
 
 // Interface for context
 export interface LeaveContextType {
@@ -227,13 +114,13 @@ export interface LeaveContextType {
   leaveQuotas: LeaveQuota[];
   loading: boolean;
   error: string | null;
-  addLeave: (leave: Omit<LeaveData, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateLeave: (id: string, leave: Partial<LeaveData>) => void;
-  deleteLeave: (id: string) => void;
+  addLeave: (leave: Omit<LeaveData, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateLeave: (id: string, leave: Partial<LeaveData>) => Promise<void>;
+  deleteLeave: (id: string) => Promise<void>;
   getEmployeeLeaves: (employeeId: string | number) => LeaveData[];
   getEmployeeQuota: (employeeId: string | number, year: number) => LeaveQuota | null;
-  updateLeaveQuota: (employeeId: string | number, year: number, quotaUpdate: Partial<Omit<LeaveQuota, 'id' | 'employeeId' | 'year' | 'createdAt' | 'updatedAt'>>) => void;
-  calculateLeaveBalance: (employeeId: string | number, year: number) => void;
+  updateLeaveQuota: (employeeId: string | number, year: number, quotaUpdate: Partial<Omit<LeaveQuota, 'id' | 'employeeId' | 'year' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
+  calculateLeaveBalance: (employeeId: string | number, year: number) => Promise<void>;
   calculateActualWorkingDays: (startDate: string, endDate: string) => number;
 }
 
@@ -244,41 +131,32 @@ const LeaveContext = createContext<LeaveContextType | undefined>(undefined);
 export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [leaveData, setLeaveData] = useState<LeaveData[]>(initialLeaveData);
   const [leaveQuotas, setLeaveQuotas] = useState<LeaveQuota[]>(initialLeaveQuotas);
-  const [loading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Simulasi load data dari API atau localStorage
+  // Load data from Supabase
   useEffect(() => {
-    // Di implementasi nyata, kita bisa menggunakan API call di sini
-    // Untuk sekarang, kita gunakan data awal dan localStorage
-    const savedLeaves = localStorage.getItem('leaveData');
-    const savedQuotas = localStorage.getItem('leaveQuotas');
-    
-    if (savedLeaves) {
+    const fetchLeaveData = async () => {
       try {
-        setLeaveData(JSON.parse(savedLeaves));
-      } catch (e) {
-        setError('Error parsing leave data');
+        setLoading(true);
+        const [leaveDataResult, leaveQuotasResult] = await Promise.all([
+          getLeaveData(),
+          getLeaveQuotas()
+        ]);
+        
+        setLeaveData(leaveDataResult);
+        setLeaveQuotas(leaveQuotasResult);
+        setError(null);
+      } catch (e: any) {
+        console.error('Error fetching leave data:', e);
+        setError(e.message || 'Error loading leave data');
+      } finally {
+        setLoading(false);
       }
-    }
+    };
     
-    if (savedQuotas) {
-      try {
-        setLeaveQuotas(JSON.parse(savedQuotas));
-      } catch (e) {
-        setError('Error parsing leave quotas');
-      }
-    }
+    fetchLeaveData();
   }, []);
-
-  // Simpan ke localStorage ketika data berubah
-  useEffect(() => {
-    localStorage.setItem('leaveData', JSON.stringify(leaveData));
-  }, [leaveData]);
-  
-  useEffect(() => {
-    localStorage.setItem('leaveQuotas', JSON.stringify(leaveQuotas));
-  }, [leaveQuotas]);
 
   // Function untuk menghitung jumlah hari kerja dalam rentang tanggal
   const calculateActualWorkingDays = (startDate: string, endDate: string): number => {
@@ -302,40 +180,44 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Tambah data cuti baru
-  const addLeave = (leave: Omit<LeaveData, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addLeave = async (leave: Omit<LeaveData, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> => {
     try {
-      // Hitung jumlah hari kerja sesungguhnya
-      const actualWorkingDays = calculateActualWorkingDays(leave.startDate || '', leave.endDate || '');
+      setLoading(true);
       
-      // Generate ID baru dan timestamps
-      const newLeave: LeaveData = {
+      // Hitung jumlah hari kerja sesungguhnya
+      const actualWorkingDays = calculateActualWorkingDays(leave.startDate, leave.endDate);
+      
+      // Prepare data dengan hari kerja yang benar
+      const leaveWithWorkingDays = {
         ...leave,
-        // Pastikan duration menunjukkan hari kerja yang benar
-        duration: actualWorkingDays,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        duration: actualWorkingDays
       };
 
-      // Tambahkan ke state
+      // Simpan ke Supabase
+      const newLeave = await apiAddLeaveData(leaveWithWorkingDays);
+      
+      // Update state
       setLeaveData(prev => [...prev, newLeave]);
 
       // Update kuota cuti jika jenis cuti adalah tahunan
       if (leave.leaveType === 'Tahunan') {
-        const quota = getEmployeeQuota(leave.employeeId, leave.year);
-        updateLeaveQuota(leave.employeeId, leave.year, {
-          annualUsed: (quota?.annualUsed || 0) + actualWorkingDays,
-          annualRemaining: (quota?.annualRemaining || 12) - actualWorkingDays
-        });
+        await calculateLeaveBalance(leave.employeeId, leave.year);
       }
-    } catch (e) {
-      setError('Error adding leave');
+      setError(null);
+    } catch (err: any) {
+      console.error('Error adding leave data:', err);
+      setError(err.message || 'Error adding leave data');
+      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   // Update data cuti
-  const updateLeave = (id: string, leaveUpdate: Partial<LeaveData>) => {
+  const updateLeave = async (id: string, leaveUpdate: Partial<LeaveData>): Promise<void> => {
     try {
+      setLoading(true);
+      
       // Temukan data cuti yang akan diupdate
       const leaveToUpdate = leaveData.find(leave => leave.id === id);
       if (!leaveToUpdate) {
@@ -344,184 +226,164 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       // Jika ada perubahan tanggal, hitung ulang hari kerja
       let actualWorkingDays = leaveToUpdate.duration;
-      if (('startDate' in leaveUpdate || 'endDate' in leaveUpdate) && leaveUpdate.startDate && leaveUpdate.endDate) {
-        actualWorkingDays = calculateActualWorkingDays(leaveUpdate.startDate, leaveUpdate.endDate);
+      if (('startDate' in leaveUpdate || 'endDate' in leaveUpdate)) {
+        const startDate = leaveUpdate.startDate || leaveToUpdate.startDate;
+        const endDate = leaveUpdate.endDate || leaveToUpdate.endDate;
+        actualWorkingDays = calculateActualWorkingDays(startDate, endDate);
         // Tambahkan durasi yang benar ke update
         leaveUpdate.duration = actualWorkingDays;
-      } else if ('startDate' in leaveUpdate && !('endDate' in leaveUpdate) && leaveToUpdate.endDate) {
-        // Hanya startDate yang berubah
-        if (leaveUpdate.startDate) { // Ensure startDate is defined
-          actualWorkingDays = calculateActualWorkingDays(leaveUpdate.startDate, leaveToUpdate.endDate);
-          leaveUpdate.duration = actualWorkingDays;
-        }
-      } else if ('endDate' in leaveUpdate && !('startDate' in leaveUpdate) && leaveToUpdate.startDate) {
-        // Hanya endDate yang berubah
-        if (leaveUpdate.endDate) { // Ensure endDate is defined
-          actualWorkingDays = calculateActualWorkingDays(leaveToUpdate.startDate, leaveUpdate.endDate);
-          leaveUpdate.duration = actualWorkingDays;
-        }
       }
-
-      // Update data cuti
-      const updatedLeaveData = leaveData.map(leave => {
-        if (leave.id === id) {
-          return {
-            ...leave,
-            ...leaveUpdate,
-            updatedAt: new Date().toISOString()
-          };
-        }
-        return leave;
-      });
-
-      setLeaveData(updatedLeaveData);
-
-      // Jika ada perubahan durasi dan jenis cuti tahunan, perbarui kuota
-      if (leaveToUpdate.leaveType === 'Tahunan' && 'duration' in leaveUpdate) {
-        const oldDuration = leaveToUpdate.duration;
-        const newDuration = actualWorkingDays;
-        const difference = newDuration - oldDuration;
-
-        if (difference !== 0) {
-          const quota = getEmployeeQuota(leaveToUpdate.employeeId, leaveToUpdate.year);
-          updateLeaveQuota(leaveToUpdate.employeeId, leaveToUpdate.year, {
-            annualUsed: (quota?.annualUsed || 0) + difference,
-            annualRemaining: (quota?.annualRemaining || 12) - difference
-          });
-        }
+      
+      // Update leave data di state
+      const updatedLeave = { ...leaveToUpdate, ...leaveUpdate, updatedAt: new Date().toISOString() };
+      setLeaveData(prevData => prevData.map(leave => leave.id === id ? updatedLeave : leave));
+      
+      // Kirim ke Supabase
+      await apiUpdateLeaveData(id, updatedLeave);
+      setError(null);
+      
+      // Update leave balance jika cuti tahunan
+      if (leaveToUpdate.leaveType === 'Tahunan' || (leaveUpdate.leaveType === 'Tahunan')) {
+        await calculateLeaveBalance(leaveToUpdate.employeeId, leaveToUpdate.year);
       }
-    } catch (e) {
-      setError('Error updating leave');
+    } catch (err: any) {
+      console.error('Error updating leave data:', err);
+      setError(err.message || 'Error updating leave data');
+      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   // Hapus data cuti
-  const deleteLeave = (id: string) => {
-    // Get the leave before deleting
-    const leaveToDelete = leaveData.find(leave => leave.id === id);
-    
-    setLeaveData(prevData => prevData.filter(leave => leave.id !== id));
-    
-    // Recalculate leave balance if the deleted leave was annual leave
-    if (leaveToDelete && leaveToDelete.leaveType === 'Tahunan') {
-      calculateLeaveBalance(leaveToDelete.employeeId, leaveToDelete.year);
-    }
-    
-    // If big leave was deleted, restore annual leave quota
-    if (leaveToDelete && leaveToDelete.leaveType === 'Besar') {
-      const quota = getEmployeeQuota(leaveToDelete.employeeId, leaveToDelete.year);
-      if (quota && quota.bigLeaveStatus) {
-        updateLeaveQuota(leaveToDelete.employeeId, leaveToDelete.year, {
-          annualQuota: 12,
-          bigLeaveStatus: false,
-          lastBigLeaveYear: undefined
-        });
-        calculateLeaveBalance(leaveToDelete.employeeId, leaveToDelete.year);
+  const deleteLeave = async (id: string): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      // Get the leave before deleting
+      const leaveToDelete = leaveData.find(leave => leave.id === id);
+      
+      if (!leaveToDelete) {
+        throw new Error(`Leave with ID ${id} not found`);
       }
+      
+      // Update state
+      setLeaveData(prevData => prevData.filter(leave => leave.id !== id));
+      
+      // Send to Supabase
+      await apiDeleteLeaveData(id);
+      setError(null);
+      
+      // Recalculate leave balance if the deleted leave was annual leave
+      if (leaveToDelete && leaveToDelete.leaveType === 'Tahunan') {
+        await calculateLeaveBalance(leaveToDelete.employeeId, leaveToDelete.year);
+      }
+      
+      // If big leave was deleted, restore annual leave quota
+      if (leaveToDelete && leaveToDelete.leaveType === 'Besar') {
+        const quota = getEmployeeQuota(leaveToDelete.employeeId, leaveToDelete.year);
+        if (quota && quota.bigLeaveStatus) {
+          await updateLeaveQuota(leaveToDelete.employeeId, leaveToDelete.year, {
+            annualQuota: 12,
+            bigLeaveStatus: false,
+            lastBigLeaveYear: undefined
+          });
+        }
+      }
+    } catch (err: any) {
+      console.error('Error deleting leave data:', err);
+      setError(err.message || 'Error deleting leave data');
+      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   // Dapatkan semua cuti untuk satu pegawai
-  const getEmployeeLeaves = (employeeId: string | number) => {
+  const getEmployeeLeaves = (employeeId: string | number): LeaveData[] => {
     return leaveData.filter(leave => leave.employeeId === employeeId);
   };
-  
+
   // Mendapatkan kuota cuti pegawai
   const getEmployeeQuota = (employeeId: string | number, year: number): LeaveQuota | null => {
     const quota = leaveQuotas.find(q => q.employeeId === employeeId && q.year === year);
     return quota || null;
   };
-  
+
   // Update kuota cuti
-  const updateLeaveQuota = (employeeId: string | number, year: number, quotaUpdate: Partial<Omit<LeaveQuota, 'id' | 'employeeId' | 'year' | 'createdAt' | 'updatedAt'>>) => {
-    const now = new Date().toISOString();
-    
-    setLeaveQuotas(prevQuotas => {
-      // Check if quota exists
-      const quotaExists = prevQuotas.some(q => q.employeeId === employeeId && q.year === year);
+  const updateLeaveQuota = async (employeeId: string | number, year: number, quotaUpdate: Partial<Omit<LeaveQuota, 'id' | 'employeeId' | 'year' | 'createdAt' | 'updatedAt'>>): Promise<void> => {
+    try {
+      setLoading(true);
       
-      if (quotaExists) {
-        // Update existing quota
-        return prevQuotas.map(quota => 
-          (quota.employeeId === employeeId && quota.year === year) 
-            ? { ...quota, ...quotaUpdate, updatedAt: now } 
-            : quota
-        );
-      } else {
-        // Create new quota if we have employee details
-        const employee = leaveData.find(leave => leave.employeeId === employeeId);
-        if (!employee) return prevQuotas;
-        
-        // Get service years if available from employee data or assume default
-        const serviceYears = employee?.serviceYears ?? 0;
-        
-        const newQuota: LeaveQuota = {
-          id: Date.now().toString(),
-          employeeId,
-          employeeName: employee.employeeName,
-          employeeNip: employee.employeeNip,
-          year,
-          annualQuota: quotaUpdate.annualQuota ?? 12,
-          annualUsed: 0, // Default to 0 for new quota
-          annualRemaining: quotaUpdate.annualRemaining ?? 12,
-          previousYearRemaining: quotaUpdate.previousYearRemaining ?? 0,
-          totalAvailable: quotaUpdate.totalAvailable ?? (quotaUpdate.annualQuota ?? 12) + (quotaUpdate.previousYearRemaining ?? 0),
-          serviceYears: serviceYears,
-          bigLeaveEligible: serviceYears >= 5, // Eligible if service years >= 5
-          bigLeaveStatus: quotaUpdate.bigLeaveStatus ?? false,
-          lastBigLeaveYear: quotaUpdate.lastBigLeaveYear,
-          sickLeaveUsed: 0, // Default to 0 for new quota
-          maternityLeaveUsed: 0, // Default to 0 for new quota
-          importantLeaveUsed: 0, // Default to 0 for new quota
-          createdAt: now,
-          updatedAt: now
-        };
-        
-        return [...prevQuotas, newQuota];
+      // Find existing quota
+      const existingQuota = getEmployeeQuota(employeeId, year);
+      
+      if (!existingQuota) {
+        throw new Error(`No leave quota found for employee ${employeeId} in year ${year}`);
       }
-    });
+      
+      // Update in state
+      const updatedQuota = { ...existingQuota, ...quotaUpdate, updatedAt: new Date().toISOString() };
+      
+      setLeaveQuotas(prevQuotas => 
+        prevQuotas.map(q => 
+          (q.employeeId === employeeId && q.year === year) ? updatedQuota : q
+        )
+      );
+      
+      // Send to Supabase
+      await apiUpdateLeaveQuota(existingQuota.id, updatedQuota);
+      setError(null);
+      
+    } catch (err: any) {
+      console.error('Error updating leave quota:', err);
+      setError(err.message || 'Error updating leave quota');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
   // Hitung ulang sisa cuti
-  const calculateLeaveBalance = (employeeId: string | number, year: number) => {
-    // Get all annual leaves for this employee and year
-    const annualLeaves = leaveData.filter(
-      leave => leave.employeeId === employeeId && 
-              leave.year === year && 
-              leave.leaveType === 'Tahunan' &&
-              leave.status !== 'Rejected'
-    );
-    
-    // Calculate total days used
-    const daysUsed = annualLeaves.reduce((total, leave) => total + leave.duration, 0);
-    
-    // Get or create quota for this employee and year
-    let quota = getEmployeeQuota(employeeId, year);
-    
-    if (!quota) {
-      // If no quota exists, create default quota
-      const employee = leaveData.find(leave => leave.employeeId === employeeId);
-      if (!employee) return;
+  const calculateLeaveBalance = async (employeeId: string | number, year: number): Promise<void> => {
+    try {
+      setLoading(true);
       
-      // Check for previous year remaining days
-      const prevYearQuota = getEmployeeQuota(employeeId, year - 1);
-      const prevYearRemaining = prevYearQuota ? Math.min(prevYearQuota.annualRemaining, 6) : 0;
+      // Get current quota
+      const currentQuota = getEmployeeQuota(employeeId, year);
       
-      updateLeaveQuota(employeeId, year, {
-        annualQuota: 12,
-        annualRemaining: 12 - daysUsed,
-        previousYearRemaining: prevYearRemaining,
-        totalAvailable: 12 + prevYearRemaining - daysUsed
-      });
-    } else {
-      // Update existing quota
-      const annualRemaining = Math.max(0, quota.annualQuota - daysUsed);
-      const totalAvailable = Math.max(0, annualRemaining + quota.previousYearRemaining);
+      if (!currentQuota) {
+        throw new Error(`No leave quota found for employee ${employeeId} in year ${year}`);
+      }
       
-      updateLeaveQuota(employeeId, year, {
+      // Get all annual leaves for this employee in this year
+      const annualLeaves = leaveData.filter(leave => 
+        leave.employeeId === employeeId && 
+        leave.year === year && 
+        leave.leaveType === 'Tahunan'
+      );
+      
+      // Calculate total used days
+      const annualUsed = annualLeaves.reduce((total, leave) => total + leave.duration, 0);
+      
+      // Calculate remaining days
+      const annualRemaining = currentQuota.annualQuota - annualUsed;
+      
+      // Calculate total available (including previous year remaining)
+      const totalAvailable = annualRemaining + currentQuota.previousYearRemaining;
+      
+      // Update quota
+      await updateLeaveQuota(employeeId, year, {
+        annualUsed,
         annualRemaining,
         totalAvailable
       });
+      setError(null);
+    } catch (err: any) {
+      console.error('Error calculating leave balance:', err);
+      setError(err.message || 'Error calculating leave balance');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -548,10 +410,12 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 };
 
 // Custom hook untuk menggunakan leave context
-export const useLeave = () => {
+export const useLeave = (): LeaveContextType => {
   const context = useContext(LeaveContext);
   if (context === undefined) {
     throw new Error('useLeave must be used within a LeaveProvider');
   }
   return context;
 };
+
+export default useLeave;

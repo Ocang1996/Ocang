@@ -61,7 +61,7 @@ const LeavePage = ({ onLogout }: LeavePageProps) => {
     <div className="flex">
       <Sidebar onLogout={onLogout} />
       
-      <div className={`flex-1 transition-all duration-400 ease-out transform-gpu ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
+      <div className={`flex-1 transition-all duration-300 ease-in-out ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <Header title={t('leave_management')} onLogout={onLogout} />
         
         <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">

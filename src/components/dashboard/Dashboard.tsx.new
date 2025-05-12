@@ -1,0 +1,124 @@
+import React from 'react';
+import { UserRole } from '../../types/auth';
+
+// Definisi tipe untuk props Dashboard
+interface DashboardProps {
+  onLogout: () => void;
+  userRole?: UserRole;
+}
+
+// Komponen Dashboard sederhana
+const Dashboard: React.FC<DashboardProps> = ({ onLogout, userRole }) => {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+      {/* Sidebar */}
+      <div className="sidebar bg-white dark:bg-gray-800 w-64 p-4 h-screen border-r border-gray-200 dark:border-gray-700 hidden md:block">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-800 dark:text-white">ASN Dashboard</h1>
+        </div>
+        <nav>
+          <ul className="space-y-2">
+            <li className="bg-blue-100 dark:bg-blue-900 p-2 rounded">
+              <span className="font-medium">Dashboard</span>
+            </li>
+            <li className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+              <span>Data Pegawai</span>
+            </li>
+            <li className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+              <span>Cuti Pegawai</span>
+            </li>
+            <li className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+              <span>Laporan</span>
+            </li>
+            <li className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+              <span>Pengaturan</span>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="bg-white dark:bg-gray-800 p-4 shadow-sm flex justify-between items-center">
+          <button className="md:hidden text-gray-700 dark:text-white">
+            ☰
+          </button>
+          <h1 className="text-xl font-bold hidden md:block">Dashboard</h1>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600 dark:text-gray-300 hidden md:inline-block">
+              {userRole === 'admin' ? 'Administrator' : 'Pengguna'}
+            </span>
+            <button 
+              onClick={onLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Logout
+            </button>
+          </div>
+        </header>
+        
+        {/* Dashboard content */}
+        <main className="flex-1 p-6 overflow-auto">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Dashboard ASN</h2>
+            <p className="text-gray-600 dark:text-gray-300">Selamat datang di Dashboard Pengelolaan Data ASN</p>
+          </div>
+          
+          {/* Stat cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+              <h3 className="font-semibold text-gray-700 dark:text-gray-200">Total ASN</h3>
+              <p className="text-2xl font-bold text-gray-800 dark:text-white">1,234</p>
+              <p className="text-sm text-green-600 dark:text-green-400">↑ 3.2% dari bulan lalu</p>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+              <h3 className="font-semibold text-gray-700 dark:text-gray-200">ASN Aktif</h3>
+              <p className="text-2xl font-bold text-gray-800 dark:text-white">1,180</p>
+              <p className="text-sm text-green-600 dark:text-green-400">↑ 1.8% dari bulan lalu</p>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+              <h3 className="font-semibold text-gray-700 dark:text-gray-200">ASN Cuti</h3>
+              <p className="text-2xl font-bold text-gray-800 dark:text-white">54</p>
+              <p className="text-sm text-red-600 dark:text-red-400">↑ 12% dari bulan lalu</p>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+              <h3 className="font-semibold text-gray-700 dark:text-gray-200">Pensiun Tahun Ini</h3>
+              <p className="text-2xl font-bold text-gray-800 dark:text-white">23</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">8 orang dalam 3 bulan ke depan</p>
+            </div>
+          </div>
+          
+          {/* Charts placeholder */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm h-64 flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-400">Grafik Tipe Pegawai</p>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm h-64 flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-400">Distribusi Gender</p>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm h-64 flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-400">Distribusi Umur</p>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm h-64 flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-400">Distribusi Unit Kerja</p>
+            </div>
+          </div>
+        </main>
+        
+        {/* Footer */}
+        <footer className="bg-white dark:bg-gray-800 p-4 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-600 dark:text-gray-300">
+          &copy; 2025 ASN Dashboard. Versi 1.0.0
+        </footer>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;

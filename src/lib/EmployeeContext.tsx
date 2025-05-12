@@ -1,150 +1,41 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getEmployees, getEmployeeById, updateEmployee as apiUpdateEmployee } from './employeeService';
-import type { Employee as ApiEmployee } from './employeeService';
-import { API_CONFIG } from './config';
+import { 
+  getEmployees, 
+  getEmployeeById, 
+  createEmployee, 
+  updateEmployee as apiUpdateEmployee, 
+  deleteEmployee as apiDeleteEmployee,
+  uploadEmployeePhoto as apiUploadEmployeePhoto,
+  PaginatedResponse,
+  Employee as ApiEmployee
+} from './employeeService';
 
-// Employee data types
-export interface Employee {
-  id: number | string;
-  name: string;
-  nip: string;
-  gender: 'male' | 'female';
-  birthDate: string;
-  employeeType: 'pns' | 'p3k' | 'nonAsn' | 'pppk' | 'honorer'; // Extended to match form values
-  workUnit: string;
-  position: string;
-  rank?: string;
-  class?: string;
-  status: string; // Changed to string to handle both contexts
-  photo?: string | null;
-  educationLevel?: string;
-  educationMajor?: string;
-  educationInstitution?: string;
-  graduationYear?: string;
-  email?: string;
-  phoneNumber?: string;
-  address?: string;
-  positionHistory?: string;
-  notes?: string;
-  updatedAt?: string;
-  createdAt?: string;
-  // Added properties needed in other components
-  appointmentDate?: string; // TMT Pengangkatan untuk ASN
-  joinDate?: string; // Tanggal masuk kerja untuk NON ASN
-  jobType?: string; // Jenis Jabatan (needed for retirement calculations)
+// Employee data types - menggunakan definisi dari employeeService dengan tambahan
+export interface Employee extends Omit<ApiEmployee, 'id'> {
+  // ID bisa berupa number (dari data lama) atau string (dari Supabase)
+  id: string | number;
+  // Property untuk cache invalidation
+  _cacheTimestamp?: number;
 }
-
-// Mock data for employees when API is not available
-const mockEmployees: Employee[] = [
-  {
-    id: 1,
-    name: 'Dr. Ahmad Fauzi, S.T., M.T.',
-    nip: '197506152001121003',
-    gender: 'male',
-    birthDate: '1975-06-15',
-    employeeType: 'pns',
-    workUnit: 'Dinas Komunikasi dan Informatika',
-    position: 'Kepala Bidang Pengembangan',
-    rank: 'Pembina (IV/a)',
-    status: 'Aktif',
-    educationLevel: 's3',
-    educationMajor: 'Teknik Informatika',
-    educationInstitution: 'Universitas Indonesia',
-    graduationYear: '2018',
-    email: 'ahmad.fauzi@pemda.go.id',
-    phoneNumber: '081234567890',
-    createdAt: '2023-01-01T00:00:00.000Z'
-  },
-  {
-    id: 2,
-    name: 'Indah Permata Sari, S.E.',
-    nip: '198803242010012015',
-    gender: 'female',
-    birthDate: '1988-03-24',
-    employeeType: 'pns',
-    workUnit: 'Dinas Keuangan',
-    position: 'Analis Keuangan',
-    rank: 'Penata (III/c)',
-    status: 'Aktif',
-    educationLevel: 's1',
-    educationMajor: 'Ekonomi',
-    educationInstitution: 'Universitas Gadjah Mada',
-    graduationYear: '2009',
-    email: 'indah.permata@pemda.go.id',
-    phoneNumber: '087654321098',
-    createdAt: '2023-04-23T00:00:00.000Z'
-  },
-  {
-    id: 3,
-    name: 'Ir. Budi Santoso, M.M.',
-    nip: '197205102000031002',
-    gender: 'male',
-    birthDate: '1972-05-10',
-    employeeType: 'pns',
-    workUnit: 'Badan Perencanaan Pembangunan Daerah',
-    position: 'Kepala Seksi Perencanaan',
-    rank: 'Penata Tk. I (III/d)',
-    status: 'Aktif',
-    educationLevel: 's2',
-    educationMajor: 'Manajemen',
-    educationInstitution: 'Universitas Indonesia',
-    graduationYear: '2005',
-    email: 'budi.santoso@pemda.go.id',
-    phoneNumber: '081122334455',
-    createdAt: '2023-04-05T00:00:00.000Z'
-  },
-  {
-    id: 4,
-    name: 'Ratna Juwita, S.Sos.',
-    nip: '199001152015042008',
-    gender: 'female',
-    birthDate: '1990-01-15',
-    employeeType: 'pns',
-    workUnit: 'Sekretariat Daerah',
-    position: 'Pengadministrasi Umum',
-    rank: 'Pengatur (II/c)',
-    status: 'Cuti',
-    educationLevel: 's1',
-    educationMajor: 'Administrasi Publik',
-    educationInstitution: 'Universitas Padjadjaran',
-    graduationYear: '2013',
-    email: 'ratna.juwita@pemda.go.id',
-    phoneNumber: '082233445566',
-    createdAt: '2023-03-17T00:00:00.000Z'
-  },
-  {
-    id: 5,
-    name: 'Drs. Hendra Wijaya',
-    nip: '196912052000031001',
-    gender: 'male',
-    birthDate: '1969-12-05',
-    employeeType: 'pns',
-    workUnit: 'Inspektorat',
-    position: 'Auditor Madya',
-    rank: 'Pembina (IV/a)',
-    status: 'Sakit',
-    educationLevel: 's1',
-    educationMajor: 'Akuntansi',
-    educationInstitution: 'Universitas Indonesia',
-    graduationYear: '1995',
-    email: 'hendra.wijaya@pemda.go.id',
-    phoneNumber: '081567890123',
-    createdAt: '2023-02-28T00:00:00.000Z'
-  }
-];
 
 // Helper function to convert API employee to our context format
 const convertApiEmployee = (apiEmployee: ApiEmployee): Employee => ({
-  id: apiEmployee.id || Date.now(), // Ensure we always have an ID
-  name: apiEmployee.name,
-  nip: apiEmployee.nip,
-  gender: apiEmployee.gender,
-  birthDate: typeof apiEmployee.birthDate === 'string' 
-    ? apiEmployee.birthDate 
-    : apiEmployee.birthDate?.toISOString() || '',
-  employeeType: apiEmployee.employeeType,
-  workUnit: apiEmployee.workUnit,
-  position: apiEmployee.position,
+  // Preserve all properties from the API employee
+  ...(apiEmployee as unknown as Employee),
+  // Ensure we always have an ID
+  id: apiEmployee.id || Date.now().toString(),
+  // Ensure type safety for dates
+  birthDate: typeof apiEmployee.birthDate === 'string'
+    ? apiEmployee.birthDate
+    : apiEmployee.birthDate ? new Date(apiEmployee.birthDate).toISOString() : '',
+  // Ensure proper handling of appointmentDate
+  appointmentDate: typeof apiEmployee.appointmentDate === 'string'
+    ? apiEmployee.appointmentDate
+    : apiEmployee.appointmentDate ? new Date(apiEmployee.appointmentDate).toISOString() : undefined,
+  // Ensure proper handling of joinDate
+  joinDate: typeof apiEmployee.joinDate === 'string'
+    ? apiEmployee.joinDate
+    : apiEmployee.joinDate ? new Date(apiEmployee.joinDate).toISOString() : undefined,
   rank: apiEmployee.rank,
   class: apiEmployee.class,
   status: apiEmployee.status,
@@ -168,14 +59,24 @@ const convertApiEmployee = (apiEmployee: ApiEmployee): Employee => ({
 
 // Helper function to convert context employee to API format
 const convertToApiEmployee = (employee: Partial<Employee>): Partial<ApiEmployee> => {
-  // Create a new object with the same properties but converted to API format
+  // Extract only the properties needed by the API
+  const { 
+    // Exclude context-specific properties
+    id: _, 
+    _cacheTimestamp: __,
+    ...apiData 
+  } = employee;
+  
+  // Process ID seperately if needed
   const apiEmployee: Partial<ApiEmployee> = {
-    ...(employee as any), // Use type assertion as a workaround
-    // Convert id to string if it's a number
-    id: typeof employee.id === 'number' ? String(employee.id) : employee.id as string | undefined
+    ...apiData,
+    // Add ID explicitly if present (converting to string if needed)
+    ...(employee.id !== undefined ? { id: employee.id.toString() } : {})
   };
   
   return apiEmployee;
+  
+
 };
 
 interface EmployeeContextType {
@@ -183,13 +84,33 @@ interface EmployeeContextType {
   selectedEmployee: Employee | null;
   loading: boolean;
   error: string | null;
-  fetchEmployees: (filters?: any) => Promise<void>;
+  // Tambah pagination state
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  // Update method signatures
+  fetchEmployees: (params?: {
+    page?: number;
+    limit?: number;
+    employeeType?: string;
+    gender?: string;
+    workUnit?: string;
+    status?: string;
+    search?: string;
+  }) => Promise<void>;
   fetchEmployeeById: (id: string | number) => Promise<Employee>;
   updateEmployeeData: (id: string | number, data: Partial<Employee>) => Promise<void>;
   addEmployee: (data: Omit<Employee, 'id'>) => Promise<Employee>;
+  deleteEmployee: (id: string | number) => Promise<void>;
+  uploadEmployeePhoto: (id: string | number, photoFile: File) => Promise<{ photoUrl: string }>;
   setSelectedEmployee: (employee: Employee | null) => void;
   refreshData: () => Promise<void>;
   syncStatus: 'idle' | 'syncing' | 'error';
+  // Tambah method setPagination untuk update pagination
+  setPagination: (params: { page?: number; limit?: number }) => void;
 }
 
 // Create the context
@@ -198,24 +119,25 @@ const EmployeeContext = createContext<EmployeeContextType | undefined>(undefined
 // Simplified mock implementation
 class EmployeeDataSync {
   private lastSyncTime: number = 0;
-  
+
   constructor() {}
   
   // Simplified connect method
   connect() {
-    return () => {};
+    // Just a stub
+    this.lastSyncTime = Date.now();
   }
-  
+
   // Simplified subscribe method
   subscribe(_: () => void) {
-    return () => {};
+    // Just a stub
   }
-  
+
   // Simplified trigger sync
   triggerSync() {
     this.lastSyncTime = Date.now();
   }
-  
+
   // Get the last sync time
   getLastSyncTime() {
     return this.lastSyncTime;
@@ -226,302 +148,311 @@ class EmployeeDataSync {
 export const EmployeeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
   
-  // Initialize the sync service
-  const [dataSync] = useState(() => new EmployeeDataSync());
+  // Tambahkan state untuk pagination
+  const [pagination, setPaginationState] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
   
-  // Fetch all employees from the API
-  const fetchEmployees = useCallback(async (filters?: any) => {
+  // Untuk caching data
+  const employeeCache = React.useRef<Record<string | number, Employee>>({});
+  const listCache = React.useRef<{
+    data: Employee[];
+    params: string;
+    timestamp: number;
+  } | null>(null);
+  
+  // Update pagination
+  const setPagination = useCallback((params: { page?: number; limit?: number }) => {
+    setPaginationState(prev => ({
+      ...prev,
+      ...(params.page !== undefined ? { page: params.page } : {}),
+      ...(params.limit !== undefined ? { limit: params.limit } : {})
+    }));
+  }, []);
+
+  // Refetch data - used for manual refresh and after mutations
+  const refreshData = useCallback(async () => {
+    setSyncStatus('syncing');
     try {
-      setLoading(true);
-      setSyncStatus('syncing');
-      setError(null);
-      
-      try {
-        // Try to get data from API first
-        // Check if we should even try to connect to the backend
-        if (API_CONFIG.USE_BACKEND) {
-          const response = await getEmployees();
-          
-          // Convert API employees to our format
-          const convertedEmployees: Employee[] = (response.data || []).map(convertApiEmployee);
-          
-          setEmployees(convertedEmployees);
-        } else {
-          // USE_BACKEND is false, use mock data directly
-          throw new Error('Using mock data - backend disabled');
-        }
-      } catch (apiError) {
-        console.warn('API call failed, using mock data:', apiError);
-        
-        // If API fails, use mock data (filtered if needed)
-        let filteredMockEmployees = [...mockEmployees];
-        
-        if (filters) {
-          if (filters.workUnit && filters.workUnit !== 'all') {
-            filteredMockEmployees = filteredMockEmployees.filter(e => 
-              e.workUnit === filters.workUnit
-            );
-          }
-          
-          if (filters.status && filters.status !== 'all') {
-            filteredMockEmployees = filteredMockEmployees.filter(e => 
-              e.status === filters.status
-            );
-          }
-          
-          if (filters.search) {
-            const searchLower = filters.search.toLowerCase();
-            filteredMockEmployees = filteredMockEmployees.filter(e => 
-              e.name.toLowerCase().includes(searchLower) || 
-              e.nip.includes(searchLower) ||
-              e.position.toLowerCase().includes(searchLower)
-            );
-          }
-        }
-        
-        setEmployees(filteredMockEmployees);
-      }
-      
+      await fetchEmployees();
       setSyncStatus('idle');
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch employees');
+    } catch (err) {
       setSyncStatus('error');
-      console.error('Error fetching employees:', err);
-      
-      // Even if there's an error in our error handling, still show the mock data
-      setEmployees(mockEmployees);
-    } finally {
-      // Ensure loading state is set to false regardless of outcome
-      setLoading(false);
     }
   }, []);
   
-  // Fetch a single employee by ID
-  const fetchEmployeeById = useCallback(async (id: string | number): Promise<Employee> => {
+  // Fetch all employees with pagination and filtering
+  const fetchEmployees = useCallback(async (params?: {
+    page?: number;
+    limit?: number;
+    employeeType?: string;
+    gender?: string;
+    workUnit?: string;
+    status?: string;
+    search?: string;
+  }) => {
+    setLoading(true);
     try {
-      setLoading(true);
+      // Gunakan parameter pagination jika diberikan, otherwise gunakan state
+      const queryParams = {
+        page: params?.page || pagination.page,
+        limit: params?.limit || pagination.limit,
+        ...(params?.employeeType && { employeeType: params.employeeType }),
+        ...(params?.gender && { gender: params.gender }),
+        ...(params?.workUnit && { workUnit: params.workUnit }),
+        ...(params?.status && { status: params.status }),
+        ...(params?.search && { search: params.search })
+      };
+      
+      // Generate cache key
+      const cacheKey = JSON.stringify(queryParams);
+      
+      // Check cache first (valid for 60 seconds)
+      const now = Date.now();
+      if (listCache.current && 
+          listCache.current.params === cacheKey && 
+          now - listCache.current.timestamp < 60000) {
+        setEmployees(listCache.current.data);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+      
+      // Fetch from Supabase
+      const result: PaginatedResponse<ApiEmployee> = await getEmployees(queryParams);
+      const formattedData = result.data.map(emp => convertApiEmployee(emp));
+      
+      // Update state
+      setEmployees(formattedData);
+      setPaginationState({
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages
+      });
       setError(null);
       
-      let employee: Employee;
-      
-      try {
-        // Try to get from API first
-        const apiEmployee = await getEmployeeById(String(id));
-        employee = convertApiEmployee(apiEmployee);
-      } catch (apiError) {
-        console.warn(`API call for employee ID ${id} failed, using mock data:`, apiError);
-        
-        // If API fails, find in mock data
-        const mockEmployee = mockEmployees.find(e => String(e.id) === String(id));
-        
-        if (!mockEmployee) {
-          throw new Error(`Employee with ID ${id} not found`);
-        }
-        
-        employee = mockEmployee;
-      }
-      
-      // If we already have the selected employee, update it
-      if (selectedEmployee && selectedEmployee.id === id) {
-        setSelectedEmployee(employee);
-      }
-      
-      // Also update the employee in the employees array
-      setEmployees(prev => 
-        prev.map(emp => emp.id === id ? employee : emp)
-      );
-      
-      return employee;
+      // Update cache
+      listCache.current = {
+        data: formattedData,
+        params: cacheKey,
+        timestamp: now
+      };
     } catch (err: any) {
-      setError(err.message || `Failed to fetch employee with ID ${id}`);
-      console.error(`Error fetching employee with ID ${id}:`, err);
-      throw err;
+      setError(err.message || 'Failed to fetch employees');
+      console.error('Error fetching employees:', err);
     } finally {
       setLoading(false);
+    }
+  }, [pagination.page, pagination.limit]);
+  
+  // Fetch single employee by ID
+  const fetchEmployeeById = useCallback(async (id: string | number): Promise<Employee> => {
+    try {
+      // Check cache first (valid for 60 seconds)
+      const now = Date.now();
+      const cacheEntry = employeeCache.current[id];
+      
+      if (cacheEntry && cacheEntry._cacheTimestamp && 
+          now - cacheEntry._cacheTimestamp < 60000) {
+        return cacheEntry;
+      }
+      
+      // Fetch from Supabase if not in cache or cache expired
+      const data = await getEmployeeById(id.toString());
+      const formattedData = convertApiEmployee(data);
+      
+      // Add timestamp for cache invalidation
+      const dataWithTimestamp = {
+        ...formattedData,
+        _cacheTimestamp: now
+      } as Employee;
+      
+      // Update cache
+      employeeCache.current[id] = dataWithTimestamp;
+      
+      // If this is the currently selected employee, update it
+      if (selectedEmployee && selectedEmployee.id === id) {
+        setSelectedEmployee(dataWithTimestamp);
+      }
+      
+      return dataWithTimestamp;
+    } catch (err: any) {
+      throw new Error(err.message || `Failed to fetch employee with ID ${id}`);
     }
   }, [selectedEmployee]);
   
-  // Update an employee's data
+  // Update employee data
   const updateEmployeeData = useCallback(async (id: string | number, data: Partial<Employee>) => {
     try {
-      setLoading(true);
-      setSyncStatus('syncing');
-      setError(null);
+      // Optimistically update UI
+      setEmployees(prev => prev.map(emp => 
+        emp.id === id ? { ...emp, ...data, updatedAt: new Date().toISOString() } : emp
+      ));
       
-      let updatedEmployee: Employee;
-      
-      try {
-        // Convert to API format
-        const apiData = convertToApiEmployee(data);
-        const apiUpdatedEmployee = await apiUpdateEmployee(String(id), apiData);
-        
-        // Convert back to our format
-        updatedEmployee = convertApiEmployee(apiUpdatedEmployee);
-      } catch (apiError) {
-        console.warn(`API update for employee ID ${id} failed, updating mock data:`, apiError);
-        
-        // If API fails, update in mock data
-        const existingEmployeeIndex = employees.findIndex(e => String(e.id) === String(id));
-        
-        if (existingEmployeeIndex === -1) {
-          throw new Error(`Employee with ID ${id} not found`);
-        }
-        
-        // Create updated employee by merging existing data with updates
-        updatedEmployee = {
-          ...employees[existingEmployeeIndex],
-          ...data,
-          updatedAt: new Date().toISOString()
+      // Update cache
+      if (employeeCache.current[id]) {
+        employeeCache.current[id] = { 
+          ...employeeCache.current[id], 
+          ...data, 
+          updatedAt: new Date().toISOString(),
+          _cacheTimestamp: Date.now() 
         };
       }
       
-      // Update in local state
-      setEmployees(prev => 
-        prev.map(emp => emp.id === id ? { ...emp, ...updatedEmployee } : emp)
-      );
+      // Convert to API format and send update to Supabase
+      const apiData = convertToApiEmployee(data);
+      await apiUpdateEmployee(id.toString(), apiData);
       
-      // If this is the selected employee, update it
+      // Success! Update the selectedEmployee if it's the one being edited
       if (selectedEmployee && selectedEmployee.id === id) {
-        setSelectedEmployee({ ...selectedEmployee, ...updatedEmployee });
+        setSelectedEmployee(prev => prev ? { 
+          ...prev, 
+          ...data, 
+          updatedAt: new Date().toISOString() 
+        } : null);
       }
       
-      // Notify all listeners about the change
-      dataSync.triggerSync();
-      
-      setSyncStatus('idle');
+      // Invalidate list cache to force refresh on next fetch
+      listCache.current = null;
     } catch (err: any) {
-      setError(err.message || `Failed to update employee with ID ${id}`);
-      setSyncStatus('error');
-      console.error(`Error updating employee with ID ${id}:`, err);
-      throw err;
-    } finally {
-      setLoading(false);
+      // Revert optimistic update
+      refreshData();
+      throw new Error(err.message || `Failed to update employee with ID ${id}`);
     }
-  }, [selectedEmployee, dataSync, employees]);
+  }, [selectedEmployee, refreshData]);
   
-  // Add a new employee
-  const addEmployee = useCallback(async (data: Omit<Employee, 'id'>) => {
+  // Add new employee
+  const addEmployee = useCallback(async (data: Omit<Employee, 'id'>): Promise<Employee> => {
     try {
-      // Set status loading
-      setLoading(true);
-      setSyncStatus('syncing');
-      
-      // Buat objek pegawai baru dengan ID unik
-      const newEmployee: Employee = {
+      // Add timestamps
+      const dataWithTimestamps = {
         ...data,
-        id: Date.now(), // Timestamp sebagai ID
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       
-      // Log employee yang akan ditambahkan
-      console.log('Adding new employee:', {
-        employeeType: newEmployee.employeeType,
-        name: newEmployee.name,
-        timestamp: new Date().toISOString()
-      });
+      // Ensure required fields are present before sending to API
+      if (!dataWithTimestamps.name) {
+        throw new Error('Name is required');
+      }
+
+      // Handle convertToApiEmployee for the create operation
+      const apiData = convertToApiEmployee(dataWithTimestamps);
       
-      // Simpan ke state dengan pendekatan immutability yang lebih baik dan sinkron
-      setEmployees(prevEmployees => {
-        const newEmployees = [...prevEmployees, newEmployee];
-        console.log(`Employee added, new total: ${newEmployees.length}`, {
-          employeeId: newEmployee.id,
-          employeeType: newEmployee.employeeType,
-          employeeCount: {
-            total: newEmployees.length,
-            byType: {
-              pns: newEmployees.filter(e => e.employeeType === 'pns').length,
-              p3k: newEmployees.filter(e => e.employeeType === 'p3k').length,
-              nonAsn: newEmployees.filter(e => e.employeeType === 'nonAsn').length
-            }
-          },
-          timestamp: new Date().toISOString()
-        });
-        return newEmployees;
-      });
+      // Cast to satisfy TypeScript - we've already ensured required fields exist
+      const createData = apiData as Omit<ApiEmployee, 'id' | 'createdAt' | 'updatedAt'>;
+      const newEmployee = await createEmployee(createData);
       
-      // Force langsung update UI tanpa delay
-      setSyncStatus('idle');
+      // Convert to our format
+      const formattedData = convertApiEmployee(newEmployee);
       
-      // Triger sync sesudahnya, tapi jangan menunggu
-      Promise.resolve().then(() => {
-        dataSync.triggerSync();
-      });
+      // Optimistically update UI
+      setEmployees(prev => [...prev, formattedData]);
       
-      // Set status kembali ke idle
-      setLoading(false);
+      // Invalidate list cache
+      listCache.current = null;
       
-      // Kembalikan pegawai yang baru dibuat
-      return newEmployee;
+      return formattedData;
     } catch (err: any) {
-      // Tangani error
-      const errorMsg = err.message || 'Failed to add employee';
-      setError(errorMsg);
-      setSyncStatus('error');
-      console.error('Error adding employee:', err);
-      setLoading(false);
-      
-      // Teruskan error ke caller
-      throw new Error(errorMsg);
+      throw new Error(err.message || 'Failed to add employee');
     }
-  }, [dataSync]);
+  }, []);
   
-  // Function to refresh all data
-  const refreshData = useCallback(async () => {
+  // Delete employee
+  const deleteEmployee = useCallback(async (id: string | number) => {
     try {
-      // Set status to syncing
-      setSyncStatus('syncing');
+      // Optimistically update UI
+      setEmployees(prev => prev.filter(emp => emp.id !== id));
       
-      // Refresh the employee list
-      await fetchEmployees();
+      // Remove from cache
+      if (employeeCache.current[id]) {
+        delete employeeCache.current[id];
+      }
       
-      // Set status back to idle
-      setSyncStatus('idle');
+      // If this is the selected employee, clear selection
+      if (selectedEmployee && selectedEmployee.id === id) {
+        setSelectedEmployee(null);
+      }
+      
+      // Send delete request to Supabase
+      await apiDeleteEmployee(id.toString());
+      
+      // Invalidate list cache
+      listCache.current = null;
     } catch (err: any) {
-      console.error('Error refreshing data:', err);
-      setSyncStatus('error');
+      // Revert optimistic update
+      refreshData();
+      throw new Error(err.message || `Failed to delete employee with ID ${id}`);
     }
-  }, [fetchEmployees]);
+  }, [selectedEmployee, refreshData]);
   
-  // Subscribe to initialization only once
+  // Upload employee photo
+  const uploadEmployeePhoto = useCallback(async (id: string | number, photoFile: File): Promise<{ photoUrl: string }> => {
+    try {
+      // Send upload request to Supabase
+      const { photoUrl } = await apiUploadEmployeePhoto(id.toString(), photoFile);
+      
+      // Update employee data with the new photo URL
+      await updateEmployeeData(id, { photo: photoUrl });
+      
+      return { photoUrl };
+    } catch (err: any) {
+      throw new Error(err.message || `Failed to upload photo for employee with ID ${id}`);
+    }
+  }, [updateEmployeeData]);
+
+  // For initial data load
   useEffect(() => {
-    // Initial data load
     fetchEmployees();
-    
-    // No need for complicated sync mechanism in this simple implementation
   }, [fetchEmployees]);
-  
-  // Create the context value
-  const contextValue: EmployeeContextType = {
-    employees,
-    selectedEmployee,
-    loading,
-    error,
-    fetchEmployees,
-    fetchEmployeeById,
-    updateEmployeeData,
-    addEmployee,
-    setSelectedEmployee,
-    refreshData,
-    syncStatus
-  };
   
   return (
-    <EmployeeContext.Provider value={contextValue}>
+    <EmployeeContext.Provider value={{
+      employees,
+      selectedEmployee,
+      loading,
+      error,
+      pagination,
+      fetchEmployees,
+      fetchEmployeeById,
+      updateEmployeeData,
+      addEmployee,
+      deleteEmployee,
+      uploadEmployeePhoto,
+      setSelectedEmployee,
+      refreshData,
+      syncStatus,
+      setPagination
+    }}>
       {children}
     </EmployeeContext.Provider>
   );
 };
 
 // Custom hook to use the employee context
-export const useEmployees = () => {
+export const useEmployees = (): EmployeeContextType => {
   const context = useContext(EmployeeContext);
+  
   if (context === undefined) {
     throw new Error('useEmployees must be used within an EmployeeProvider');
   }
+  
   return context;
-}; 
+};
+
+// Hapus kelas mock EmployeeDataSync karena kita sudah menggunakan Supabase
+export const clearEmployeeCache = (): void => {
+  // Helper untuk menghapus cache secara manual jika diperlukan
+  const context = useContext(EmployeeContext);
+  if (context) {
+    context.refreshData();
+  }
+};

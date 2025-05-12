@@ -9,8 +9,31 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export const SidebarProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Menggunakan localStorage untuk menjaga konsistensi di semua halaman
-  const savedExpanded = localStorage.getItem('sidebarExpanded') === 'true';
+  // Default ke true jika tidak ada nilai tersimpan (first-time user)
+  const savedExpanded = localStorage.getItem('sidebarExpanded') !== 'false';
   const [expanded, setExpandedState] = useState(savedExpanded);
+
+  // Effect untuk sinkronisasi state antar tab/window
+  useEffect(() => {
+    // Handler untuk storage events
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'sidebarExpanded' && event.newValue !== null) {
+        setExpandedState(event.newValue === 'true');
+      }
+    };
+
+    // Pastikan state tersimpan saat pertama kali load
+    if (localStorage.getItem('sidebarExpanded') === null) {
+      localStorage.setItem('sidebarExpanded', 'true');
+    }
+
+    // Subscribe ke storage events untuk sinkronisasi antar tab/window
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   // Setter untuk expanded state dengan penyimpanan ke localStorage
   const setExpanded = (value: boolean) => {

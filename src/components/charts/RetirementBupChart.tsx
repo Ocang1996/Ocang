@@ -64,7 +64,7 @@ const RetirementBupChart = ({ data, onViewDetails }: RetirementBupChartProps) =>
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { language } = useTheme();
-  const { t } = useTranslation();
+  useTranslation(); // Tetap gunakan hook untuk konsistensi
   
   // Detect dark mode
   useEffect(() => {
@@ -115,7 +115,7 @@ const RetirementBupChart = ({ data, onViewDetails }: RetirementBupChartProps) =>
     
     if (elements.length === 0) return;
     
-    const { datasetIndex, index } = elements[0];
+    const { index } = elements[0];
     const year = data.years[index];
     
     setSelectedYear(year);

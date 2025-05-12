@@ -229,6 +229,18 @@ const WorkUnitDistributionChart = ({
   
   // Informasi insight tentang distribusi unit kerja
   const getUnitInsight = () => {
+    // Cek apakah data tersedia
+    if (!displayData || displayData.length === 0) {
+      return {
+        topUnit: '-',
+        topPercentage: '0',
+        type: language === 'id' ? 'Tidak Ada Data' : 'No Data',
+        description: language === 'id' 
+          ? 'Belum ada data pegawai yang tersedia untuk ditampilkan.' 
+          : 'No employee data available to display.'
+      };
+    }
+
     // Unit dengan pegawai terbanyak
     const topUnit = displayData[0];
     const topPercentage = ((topUnit.count / total) * 100).toFixed(1);

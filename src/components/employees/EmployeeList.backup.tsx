@@ -755,21 +755,36 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
             {status}
           </span>
         );
-    }
-  };
 
-  return (
-    <div className="flex">
-      <Sidebar onLogout={onLogout} />
-      
-      <div className={`flex-1 transition-all duration-300 ease-in-out ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
-        <Header title={t('employee_list')} onLogout={onLogout} />
-        
-        <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
-          {/* Notification */}
-          {notification && (
-            <div className={`mb-4 p-3 rounded-md text-sm flex items-center ${
-              notification.type === 'success' 
+// Format status for display
+const formatStatus = (status: string) => {
+switch(status.toLowerCase()) {
+case 'aktif':
+return (
+<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-700/30 dark:text-green-400">
+{status}
+</span>
+);
+case 'cuti':
+return (
+<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-700/30 dark:text-yellow-400">
+{status}
+</span>
+);
+case 'sakit':
+return (
+<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-700/30 dark:text-red-400">
+{status}
+</span>
+);
+default:
+return (
+<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+{status}
+</span>
+);
+}
+};
                 ? 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-800' 
                 : 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-800'
             }`}>

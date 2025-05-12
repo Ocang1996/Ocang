@@ -35,7 +35,7 @@ const EmployeeTypeChartWrapper = (props: EmployeeTypeChartProps) => {
   return <EmployeeTypeChart {...props} key={key} />;
 };
 
-const EmployeeTypeChart = ({ data, onViewDetails, detailsPosition = 'side' }: EmployeeTypeChartProps) => {
+const EmployeeTypeChart = ({ data = { pns: 0, p3k: 0, nonAsn: 0 }, onViewDetails, detailsPosition = 'side' }: EmployeeTypeChartProps) => {
   const [selectedType, setSelectedType] = useState<EmployeeType | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);

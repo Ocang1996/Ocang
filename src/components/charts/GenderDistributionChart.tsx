@@ -22,7 +22,7 @@ interface GenderDistributionChartProps {
   detailsPosition?: 'side' | 'bottom';
 }
 
-const GenderDistributionChart = ({ data, previousYearData, onViewDetails, detailsPosition = 'side' }: GenderDistributionChartProps) => {
+const GenderDistributionChart = ({ data = { male: 0, female: 0 }, previousYearData, onViewDetails, detailsPosition = 'side' }: GenderDistributionChartProps) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   
   // Use the useTheme hook instead of tracking dark mode directly

@@ -21,14 +21,13 @@ import LeaveSidebar from '../leave/LeaveSidebar';
 
 interface SidebarProps {
   onLogout: () => void;
-  activeItem?: string;
   onExpandChange?: (expanded: boolean) => void;
 }
 
 const Sidebar = ({ onLogout }: SidebarProps) => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { language, profilePhoto } = useTheme();
+  const { language } = useTheme();
   const { t } = useTranslation();
   const { selectedEmployee } = useEmployees();
   const { expanded, setExpanded } = useSidebar();
@@ -94,9 +93,18 @@ const Sidebar = ({ onLogout }: SidebarProps) => {
         <div className="flex items-center">
           <button
             onClick={toggleMobileMenu}
-            className="p-2 mr-2 bg-white/80 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300 rounded-full hover:bg-emerald-100/50 dark:hover:bg-emerald-900/20"
+            className="w-10 h-10 p-2 mr-2 bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full hover:bg-emerald-200/80 dark:hover:bg-emerald-800/40 relative overflow-hidden transition-all duration-500 ease-in-out transform hover:scale-105"
+            style={{ transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
           >
-            <Menu size={20} />
+            <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out ${mobileOpen ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'}`}
+                 style={{ transition: 'all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6)' }}>
+              <Menu size={20} />
+            </div>
+            <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out ${mobileOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'}`}
+                 style={{ transition: 'all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6)' }}>
+              <X size={20} />
+            </div>
+            <div className="opacity-0"><Menu size={20} /></div>
           </button>
           <span className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">EmpDash</span>
         </div>
@@ -104,15 +112,7 @@ const Sidebar = ({ onLogout }: SidebarProps) => {
           <button className="p-2 bg-white/80 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300 rounded-full hover:bg-emerald-100/50 dark:hover:bg-emerald-900/20 relative">
             <Bell size={18} />
           </button>
-          <Link to="/profile" className="p-1 text-gray-600 dark:text-gray-300 rounded-full hover:bg-emerald-100/50 dark:hover:bg-emerald-900/20">
-            <div className="w-7 h-7 rounded-full overflow-hidden bg-emerald-500 flex items-center justify-center text-white font-medium">
-              {profilePhoto ? (
-                <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <span>{username.charAt(0).toUpperCase()}</span>
-              )}
-            </div>
-          </Link>
+          {/* Tampilan profil akun dihapus dari mobile header */}
         </div>
       </div>
 
@@ -183,29 +183,21 @@ const Sidebar = ({ onLogout }: SidebarProps) => {
       >
         <div className="py-6 px-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg border border-gray-200/30 dark:border-gray-700/30 rounded-2xl shadow-lg transition-shadow duration-400 ease-out hover:shadow-xl">
           <div className="flex flex-col items-center space-y-2">
-            <div className="mb-4 text-center w-full flex items-center justify-between">
-              <div className="flex items-center">
-                <div 
-                  className="w-10 h-10 rounded-full overflow-hidden bg-emerald-500 flex items-center justify-center text-white"
-                >
-                  {profilePhoto ? (
-                    <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <span>{username.charAt(0).toUpperCase()}</span>
-                  )}
+            <div className="mb-4 text-center w-full flex items-center justify-center relative">
+              <button 
+                onClick={() => handleExpand(!expanded)}
+                className={`w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-800/40 transition-all duration-500 ease-in-out relative overflow-hidden group ${expanded ? 'transform hover:scale-105 shadow-md' : 'absolute left-0 transform hover:scale-105'}`}
+                style={{ transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+              >
+                <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out ${expanded ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'}`}
+                     style={{ transition: 'all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6)' }}>
+                  <Menu size={20} />
                 </div>
-                {expanded && (
-                  <span className="ml-3 text-gray-800 dark:text-gray-200 font-medium overflow-hidden whitespace-nowrap transition-all">{username}</span>
-                )}
-              </div>
-              {expanded && (
-                <button 
-                  onClick={() => handleExpand(false)}
-                  className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <X size={16} />
-                </button>
-              )}
+                <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out ${expanded ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'}`}
+                     style={{ transition: 'all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6)' }}>
+                  <X size={20} />
+                </div>
+              </button>
             </div>
             
             {navItems.map((item) => (

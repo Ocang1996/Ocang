@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { Employee } from '../../lib/EmployeeContext';
+import { useSidebar } from '../../lib/SidebarContext';
 import { X, Check, User, Upload } from 'lucide-react';
 import { compressImage, validateImageFile } from '../../lib/imageUtils';
 import DatePicker from 'react-datepicker';
@@ -9,7 +11,7 @@ registerLocale('id', id);
 
 interface AddEmployeeFormProps {
   onClose: () => void;
-  onSubmit: (employeeData: any) => Promise<any>;
+  onSubmit: (employeeData: Omit<Employee, 'id'>) => Promise<Employee>;
 }
 
 const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
@@ -43,28 +45,19 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tempProfilePhoto, setTempProfilePhoto] = useState<string | null>(null);
   
-  // Add state to track sidebar collapse state
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Get sidebar state from context
+  const { expanded } = useSidebar();
   
-  // Listen for sidebar collapse state changes
+  // Compute modal container class based on sidebar state
+  const modalContainerClass = useMemo(() => 
+    expanded ? 'modal-container' : 'modal-container-collapsed'
+  , [expanded]);
+  
+  // Track sidebar changes
   useEffect(() => {
-    // Function to check if sidebar is collapsed
-    const checkSidebarState = () => {
-      const sidebarElement = document.querySelector('aside');
-      if (sidebarElement) {
-        // Check if sidebar has the w-20 class (collapsed state)
-        setSidebarCollapsed(sidebarElement.classList.contains('w-20'));
-      }
-    };
-    
-    // Check initial state
-    checkSidebarState();
-    
-    // Create observer to detect changes
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach(() => {
-        checkSidebarState();
-      });
+    // Create a mutation observer to watch for sidebar class changes
+    const observer = new MutationObserver(() => {
+      // Re-render the component when sidebar class changes
     });
     
     // Target the sidebar element for observation
@@ -116,13 +109,26 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
+    // Validasi umum untuk semua tipe pegawai
     if (!formData.name.trim()) {
       newErrors.name = 'Nama pegawai harus diisi';
     }
     
+    if (!formData.position.trim()) {
+      newErrors.position = 'Jabatan harus diisi';
+    }
+    
+    if (!formData.workUnit.trim()) {
+      newErrors.workUnit = 'Unit kerja harus diisi';
+    }
+    
+    if (formData.birthDate && !isValidDate(formData.birthDate)) {
+      newErrors.birthDate = 'Format tanggal lahir tidak valid';
+    }
+    
     // NIP dan TMT Pengangkatan wajib untuk PNS dan PPPK
     if (formData.employeeType === 'pns' || formData.employeeType === 'pppk') {
-      if (!formData.nip.trim()) {
+      if (!formData.nip || !formData.nip.trim()) {
         newErrors.nip = 'NIP harus diisi';
       } else if (!/^\d{18}$/.test(formData.nip)) {
         newErrors.nip = 'NIP harus terdiri dari 18 digit angka';
@@ -146,10 +152,36 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
           newErrors.birthDate = 'Pegawai sudah mencapai batas usia pensiun';
         }
       }
+      
+      // Validasi opsional untuk rank/pangkat untuk ASN
+      if (formData.rank && formData.rank.trim() === '') {
+        setFormData(prev => ({
+          ...prev,
+          rank: '' // Gunakan string kosong sebagai penanda
+        }));
+      }
+      
+      // Validasi opsional untuk class/golongan untuk ASN
+      if (formData.class && formData.class.trim() === '') {
+        setFormData(prev => ({
+          ...prev,
+          class: '' // Gunakan string kosong sebagai penanda
+        }));
+      }
     }
     
     // Tanggal Mulai Bekerja wajib untuk Non-ASN
     if (formData.employeeType === 'honorer') {
+      // Reset fields khusus PNS/PPPK jika tipe pegawai adalah honorer
+      setFormData(prev => ({
+        ...prev,
+        nip: '',
+        rank: '',
+        class: '',
+        positionHistory: '',
+        appointmentDate: ''
+      }));
+      
       if (!formData.joinDate) {
         newErrors.joinDate = 'Tanggal Mulai Bekerja harus diisi';
       } else if (!isValidDate(formData.joinDate)) {
@@ -157,16 +189,9 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
       }
     }
     
-    if (!formData.position.trim()) {
-      newErrors.position = 'Jabatan harus diisi';
-    }
-    
-    if (!formData.workUnit.trim()) {
-      newErrors.workUnit = 'Unit kerja harus diisi';
-    }
-    
-    if (formData.birthDate && !isValidDate(formData.birthDate)) {
-      newErrors.birthDate = 'Format tanggal lahir tidak valid';
+    // Validasi fields pendidikan
+    if (formData.educationLevel === '') {
+      newErrors.educationLevel = 'Tingkat pendidikan harus dipilih';
     }
     
     setErrors(newErrors);
@@ -315,34 +340,69 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
     try {
       setSaving(true);
       
-      // Debug: log formData before submit
-      console.log('Data yang dikirim ke backend:', formData);
+      // Format data sebelum dikirim
+      const preparedData = prepareFormData();
       
-      // Panggil onSubmit dan tangkap hasilnya tanpa menunggu
-      onSubmit(formData)
-        .then(() => {
-          // Success handling dilakukan di EmployeeList
-          onClose();
-        })
-        .catch(err => {
-          console.error('Error dalam handleSubmit:', err);
-          setErrors(prev => ({
-            ...prev,
-            form: err.message || 'Terjadi kesalahan saat menyimpan data'
-          }));
-        })
-        .finally(() => {
-          setSaving(false);
-        });
+      // Debug: log formData before submit
+      console.log('Data yang dikirim ke Supabase:', preparedData);
+      
+      // Panggil onSubmit dan tangkap hasilnya
+      try {
+        const result = await onSubmit(preparedData);
+        console.log('Data berhasil disimpan:', result);
+        onClose();
+      } catch (err: any) {
+        console.error('Error saat menyimpan data:', err);
+        setErrors(prev => ({
+          ...prev,
+          form: err.message || 'Terjadi kesalahan saat menyimpan data'
+        }));
+      }
     } catch (err: any) {
       console.error('Error unexpected dalam handleSubmit:', err);
       setErrors(prev => ({
         ...prev,
         form: err.message || 'Terjadi kesalahan saat menyimpan data'
       }));
+    } finally {
       setSaving(false);
     }
   };
+  
+  // Helper to prepare form data before sending to Supabase
+  const prepareFormData = () => {
+    // Create a copy to avoid mutating the original
+    let preparedData: Record<string, any> = { ...formData };
+    
+    // Make sure all dates are in ISO format
+    if (preparedData.birthDate) {
+      preparedData.birthDate = new Date(preparedData.birthDate).toISOString();
+    }
+    
+    if (preparedData.appointmentDate) {
+      preparedData.appointmentDate = new Date(preparedData.appointmentDate).toISOString();
+    }
+    
+    if (preparedData.joinDate) {
+      preparedData.joinDate = new Date(preparedData.joinDate).toISOString();
+    }
+    
+    // Handle employee type specific data for Non-ASN
+    if (preparedData.employeeType === 'honorer') {
+      // Filter out fields specific to PNS/PPPK
+      const fieldsToExclude = ['nip', 'rank', 'class', 'positionHistory', 'appointmentDate', 'jobType'];
+      preparedData = Object.fromEntries(
+        Object.entries(preparedData).filter(([key]) => !fieldsToExclude.includes(key))
+      );
+    }
+    
+    // Filter out empty string values
+    preparedData = Object.fromEntries(
+      Object.entries(preparedData).filter(([_, value]) => value !== '')
+    );
+    
+    return preparedData as Omit<Employee, 'id'>;
+  }
   
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -360,7 +420,7 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
 
   return (
     <div className="fixed inset-0 z-60 overflow-hidden bg-gray-900/40 backdrop-blur-sm" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div className={`fixed inset-0 ${sidebarCollapsed ? 'modal-container-collapsed' : 'modal-container'} flex items-center justify-center`}>
+      <div className={`fixed inset-0 ${modalContainerClass} flex items-center justify-center`}>
         <div className="fixed inset-0 transition-opacity" 
           aria-hidden="true" onClick={onClose}>
         </div>
@@ -915,4 +975,4 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
   );
 };
 
-export default AddEmployeeForm; 
+export default AddEmployeeForm;

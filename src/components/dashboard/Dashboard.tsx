@@ -1114,7 +1114,7 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
     <div className="flex">
       <Sidebar onLogout={onLogout} />
       
-      <div className={`flex-1 transition-all duration-400 ease-out transform-gpu ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
+      <div className={`flex-1 transition-all duration-300 ease-in-out ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <Header 
           title={t('dashboard_title')} 
           onLogout={onLogout} 
@@ -1200,10 +1200,10 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
                     />
                   </div>
                   
-                  {/* Main dashboard grid with better organization */}
+                  {/* Main dashboard grid dengan layout sesuai urutan yang diminta */}
                   <div className="grid grid-cols-12 gap-4">
-                    {/* Row 1: Gender and Employee Type, 6 columns each */}
-                    <div className="col-span-12 md:col-span-6">
+                    {/* Baris 1: Jenis kepegawaian (kiri) dan distribusi jenis kelamin (kanan) */}
+                    <div className="col-span-12 lg:col-span-7">
                       <EmployeeTypeChart 
                         data={employeeTypesData} 
                         onViewDetails={() => handleViewDetails('kepegawaian')}
@@ -1212,7 +1212,7 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
                       />
                     </div>
                     
-                    <div className="col-span-12 md:col-span-6">
+                    <div className="col-span-12 lg:col-span-5">
                       <GenderDistributionChart 
                         data={genderData} 
                         previousYearData={{
@@ -1224,8 +1224,15 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
                       />
                     </div>
                     
-                    {/* Row 2: Age and Work Unit Distribution, 6 columns each */}
-                    <div className="col-span-12 md:col-span-6">
+                    {/* Baris 2: Distribusi unit kerja (kiri) dan distribusi usia (kanan) */}
+                    <div className="col-span-12 lg:col-span-7">
+                      <WorkUnitDistributionChart 
+                        data={workUnitData} 
+                        onViewDetails={() => handleViewDetails('kepegawaian')}
+                      />
+                    </div>
+                    
+                    <div className="col-span-12 lg:col-span-5">
                       <AgeDistributionChart 
                         data={ageData} 
                         onViewDetails={() => handleViewDetails('kepegawaian')}
@@ -1233,15 +1240,8 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
                       />
                     </div>
                     
-                    <div className="col-span-12 md:col-span-6">
-                      <WorkUnitDistributionChart 
-                        data={workUnitData} 
-                        onViewDetails={() => handleViewDetails('kepegawaian')}
-                      />
-                    </div>
-                    
-                    {/* Row 3: Rank and Education Level, 6 columns each */}
-                    <div className="col-span-12 md:col-span-6">
+                    {/* Baris 3: Pangkat golongan (kiri) dan ringkasan pendidikan (kanan) */}
+                    <div className="col-span-12 lg:col-span-6">
                       <RankDistributionChart 
                         data={rankData}
                         onViewDetails={() => handleViewDetails('kepegawaian')}
@@ -1249,7 +1249,7 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
                       />
                     </div>
                     
-                    <div className="col-span-12 md:col-span-6">
+                    <div className="col-span-12 lg:col-span-6">
                       <EducationLevelChart 
                         data={educationData}
                         onViewDetails={() => handleViewDetails('kepegawaian')}
@@ -1257,7 +1257,7 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
                       />
                     </div>
                     
-                    {/* Row 4: Retirement BUP spanning full width */}
+                    {/* Baris 4: Prediksi pensiun (full width) */}
                     <div className="col-span-12">
                       <RetirementBupChart 
                         data={retirementBupData} 
@@ -1275,10 +1275,10 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
                     {t('data_employment')}
                   </h2>
                   
-                  {/* Grid layout yang konsisten dengan tab overview */}
+                  {/* Grid layout dengan urutan yang sama seperti tab overview */}
                   <div className="grid grid-cols-12 gap-4">
-                    {/* Row 1: Employee Type and Gender, 6 columns each */}
-                    <div className="col-span-12 md:col-span-6">
+                    {/* Baris 1: Jenis kepegawaian (kiri) dan distribusi jenis kelamin (kanan) */}
+                    <div className="col-span-12 lg:col-span-7">
                       <EmployeeTypeChart 
                         data={employeeTypesData}
                         detailsPosition="bottom" 
@@ -1286,7 +1286,7 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
                       />
                     </div>
                     
-                    <div className="col-span-12 md:col-span-6">
+                    <div className="col-span-12 lg:col-span-5">
                       <GenderDistributionChart 
                         data={genderData}
                         previousYearData={{
@@ -1297,28 +1297,27 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
                       />
                     </div>
                     
-                    {/* Row 2: Age and Work Unit, 6 columns each */}
-                    <div className="col-span-12 md:col-span-6">
+                    {/* Baris 2: Distribusi unit kerja (kiri) dan distribusi usia (kanan) */}
+                    <div className="col-span-12 lg:col-span-7">
+                      <WorkUnitDistributionChart data={workUnitData} />
+                    </div>
+                    
+                    <div className="col-span-12 lg:col-span-5">
                       <AgeDistributionChart 
                         data={ageData} 
                         key={`age-chart-kepegawaian-${forceUpdateKey}-${employees.length}-${JSON.stringify(ageData)}`}
                       />
                     </div>
                     
-                    <div className="col-span-12 md:col-span-6">
-                      <WorkUnitDistributionChart data={workUnitData} />
-                    </div>
-                    
-                    {/* Row 3: Rank and Education, 6 columns each */}
-                    <div className="col-span-12 md:col-span-6">
+                    {/* Baris 3: Pangkat golongan (kiri) dan ringkasan pendidikan (kanan) */}
+                    <div className="col-span-12 lg:col-span-6">
                       <RankDistributionChart 
                         data={rankData}
-                        onViewDetails={() => handleViewDetails('kepegawaian')}
                         detailsPosition="bottom" 
                       />
                     </div>
                     
-                    <div className="col-span-12 md:col-span-6">
+                    <div className="col-span-12 lg:col-span-6">
                       <EducationLevelChart 
                         data={educationData}
                         detailsPosition="bottom" 
