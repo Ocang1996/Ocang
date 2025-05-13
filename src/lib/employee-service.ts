@@ -58,7 +58,7 @@ export const employeeService = {
       }
 
       // Apply pagination
-      query = query.range(offset, offset + limit - 1).order('name');
+      query = query.order('name').limit(limit).offset(offset);
 
       // Execute query
       const { data, error, count } = await query;

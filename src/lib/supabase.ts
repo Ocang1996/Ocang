@@ -80,19 +80,92 @@ export function getSupabaseClient(): SupabaseClient {
 
 // Buat mock client untuk fallback
 function createMockClient(): SupabaseClient {
+  // Type definitions untuk mock client
+  interface QueryConfig {
+    orderField: string;
+    limitVal: number;
+    offsetVal: number;
+    filters: Record<string, any>;
+  }
+
+  interface QueryResponse<T> {
+    data: T;
+    error: any | null;
+    count: number;
+  }
+
+  interface QueryBuilder {
+    eq: (field: string, value: any) => QueryBuilder;
+    or: (conditions: string) => QueryBuilder;
+    order: (column: string) => QueryBuilder;
+    limit: (limit: number) => QueryBuilder;
+    offset: (offset: number) => QueryBuilder;
+    range: (start: number, end: number) => Promise<QueryResponse<any[]>>;
+    single: () => Promise<QueryResponse<any>>;
+    then: (callback: (result: QueryResponse<any[]>) => any) => any;
+    [key: string]: any; // Untuk mendukung dynamic properties
+  }
+
+  // Buat fungsi helper untuk mengembalikan data yang sama
+  const createSuccessResponse = <T>(data: T): Promise<QueryResponse<T>> => {
+    return Promise.resolve({
+      data,
+      error: null,
+      count: Array.isArray(data) ? data.length : 0
+    });
+  };
+  
+  // Buat query builder dasar yang bisa digunakan di berbagai tempat
+  const createQueryBuilder = (): QueryBuilder => {
+    // Menyimpan konfigurasi query
+    const config: QueryConfig = {
+      orderField: '',
+      limitVal: 10,
+      offsetVal: 0,
+      filters: {}
+    };
+    
+    // Builder object dengan semua method yang bisa dirantai
+    const builder: QueryBuilder = {
+      // Filter methods
+      eq: (field: string, value: any) => {
+        config.filters[field] = value;
+        return builder;
+      },
+      or: (_conditions: string) => {
+        // Conditions parameter tidak digunakan untuk mock, tapi disimpan untuk tipe
+        return builder;
+      },
+      // Ordering dan pagination
+      order: (column: string) => {
+        config.orderField = column;
+        return builder;
+      },
+      limit: (limit: number) => {
+        config.limitVal = limit;
+        return builder;
+      },
+      offset: (offset: number) => {
+        config.offsetVal = offset;
+        return builder;
+      },
+      range: (start: number, end: number) => {
+        config.offsetVal = start;
+        config.limitVal = end - start + 1;
+        return createSuccessResponse([]);
+      },
+      // Fetch methods
+      single: () => createSuccessResponse(null),
+      // Execute query dan return results
+      then: (callback) => callback(createSuccessResponse([]))
+    };
+    
+    return builder;
+  };
+  
   return {
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: () => Promise.resolve({ data: null, error: null }),
-          order: () => Promise.resolve({ data: [], error: null }),
-          range: () => Promise.resolve({ data: [], error: null, count: 0 }),
-        }),
-        or: () => ({
-          range: () => Promise.resolve({ data: [], error: null, count: 0 }),
-        }),
-        order: () => Promise.resolve({ data: [], error: null }),
-      }),
+    from: (_table: string) => ({
+      select: (_columns: string | null = '*', _options: any = { count: 'exact' }) => createQueryBuilder(),
       insert: () => ({
         select: () => ({
           single: () => Promise.resolve({ data: null, error: null }),

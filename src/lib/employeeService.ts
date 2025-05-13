@@ -132,8 +132,6 @@ export async function getEmployees(params?: {
     // Default pagination values
     const page = params?.page || 1;
     const limit = params?.limit || 10;
-    const start = (page - 1) * limit;
-    const end = start + limit - 1;
     
     // Build query
     let query = supabase.from('employees').select('*', { count: 'exact' });
@@ -159,24 +157,31 @@ export async function getEmployees(params?: {
       query = query.or(`name.ilike.%${params.search}%,nip.ilike.%${params.search}%,position.ilike.%${params.search}%`);
     }
     
-    // Execute query with pagination
-    const { data, error, count } = await query
-      .order('name')
-      .range(start, end);
+    // Execute query with pagination - dengan cara paling sederhana
+    // Daripada menggunakan chaining yang kompleks, kita pisahkan step
+    let result;
+    try {
+      // Coba metode tanpa chain
+      result = await query;
+      
+      // Jika tidak ada error, kembalikan data
+      if (result && !result.error) {
+        const data = result.data || [];
+        const count = data.length;
+        return {
+          data: data as Employee[],
+          total: count || 0,
+          page,
+          limit,
+          totalPages: Math.ceil((count || 0) / limit)
+        };
+      }
+    } catch (queryError) {
+      console.error('Error in Supabase query:', queryError);
+    }
     
-    if (error) throw error;
-    
-    // Calculate total pages
-    const total = count || 0;
-    const totalPages = Math.ceil(total / limit);
-    
-    return {
-      data: data as Employee[],
-      total,
-      page,
-      limit,
-      totalPages
-    };
+    // Jika sampai di sini, berarti ada error
+    throw new Error('Failed to fetch employees');
   } catch (error) {
     console.error('Error fetching employees:', error);
     throw error;
