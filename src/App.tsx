@@ -4,6 +4,7 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './components/dashboard/Dashboard';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import TestProtectedRoute from './components/auth/TestProtectedRoute';
 import ProfilePage from './components/profile/ProfilePage';
 import EmployeeList from './components/employees/EmployeeList';
 import ReportsPage from './components/reports/ReportsPage';
@@ -242,11 +243,11 @@ function App() {
                 </ProtectedRoute>
               } />
               
-              {/* Supabase testing route wrapped in ProtectedRoute */}
+              {/* Supabase testing route - menggunakan TestProtectedRoute untuk bypass autentikasi */}
               <Route path="/supabase-test" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <TestProtectedRoute>
                   <SupabaseTestPage />
-                </ProtectedRoute>
+                </TestProtectedRoute>
               } />
               
               <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
