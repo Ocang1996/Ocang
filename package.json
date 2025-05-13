@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "setup:env": "node -e \"const fs = require('fs'); if (!fs.existsSync('.env')) { fs.copyFileSync('.env.example', '.env'); console.log('Created .env file from .env.example'); }\"",
-    "predeploy": "npm run setup:env"
+    "predeploy": "npm run setup:env",
+    "setup:supabase": "node setup-supabase.js"
   },
   "dependencies": {
     "@react-three/drei": "^9.99.0",
