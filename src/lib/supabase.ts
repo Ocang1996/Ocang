@@ -15,6 +15,7 @@ export interface SupabaseClient {
   storage: {
     from: (bucket: string) => any;
   };
+  rpc: (functionName: string, params?: any) => Promise<{ data: any; error: any }>;
 }
 
 // Ambil environment variables dari .env atau gunakan nilai default untuk development
@@ -196,6 +197,7 @@ function createMockClient(): SupabaseClient {
         getPublicUrl: () => ({ data: { publicUrl: '' } }),
       }),
     },
+    rpc: (functionName: string, params?: any) => Promise.resolve({ data: null, error: null }),
   };
 }
 

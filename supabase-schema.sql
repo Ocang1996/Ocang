@@ -130,6 +130,39 @@ CREATE POLICY "Admins can manage employees" ON public.employees
     )
   );
 
+-- Leaves table for employee leave management
+CREATE TABLE public.leaves (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  employee_id UUID NOT NULL REFERENCES public.employees(id),
+  employee_name TEXT NOT NULL,
+  leave_type TEXT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  duration INTEGER NOT NULL,
+  reason TEXT,
+  status TEXT NOT NULL CHECK (status IN ('Pending', 'Approved', 'Rejected')),
+  input_by TEXT NOT NULL,
+  year INTEGER NOT NULL,
+  document_required BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- RLS for leaves
+ALTER TABLE public.leaves ENABLE ROW LEVEL SECURITY;
+
+-- Policies for leaves table
+CREATE POLICY "Anyone can view leaves" ON public.leaves
+  FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage leaves" ON public.leaves
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM public.users
+      WHERE id = auth.uid() AND role IN ('admin', 'superadmin')
+    )
+  );
+
 -- Storage bucket for employee photos and other files
 CREATE POLICY "Public Access to Assets"
 ON storage.objects FOR SELECT

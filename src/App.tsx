@@ -16,6 +16,7 @@ import HelpPage from './components/help/HelpPage';
 import ResetPassword from './components/auth/ResetPassword';
 import LeavePage from './components/leave/LeavePage';
 import SupabaseTestPage from './pages/SupabaseTestPage';
+import SupabaseDebugPage from './pages/SupabaseDebugPage';
 import { UserRole } from './types/auth';
 import { initSessionTimeout } from './lib/sessionUtils';
 // import { isAdmin } from './lib/auth';
@@ -247,6 +248,13 @@ function App() {
               <Route path="/supabase-test" element={
                 <TestProtectedRoute>
                   <SupabaseTestPage />
+                </TestProtectedRoute>
+              } />
+              
+              {/* Supabase debug route - menggunakan TestProtectedRoute untuk bypass autentikasi */}
+              <Route path="/supabase-debug" element={
+                <TestProtectedRoute>
+                  <SupabaseDebugPage />
                 </TestProtectedRoute>
               } />
               
