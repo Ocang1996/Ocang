@@ -14,7 +14,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/drei": "^10.0.7",
+    "@react-three/drei": "^9.99.0",
     "@react-three/fiber": "^9.1.2",
     "@supabase/supabase-js": "^2.49.4",
     "chart.js": "^4.4.2",
