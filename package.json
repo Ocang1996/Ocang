@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@react-three/drei": "^9.99.0",
-    "@react-three/fiber": "^9.1.2",
+    "@react-three/fiber": "^8.15.19",
     "@supabase/supabase-js": "^2.49.4",
     "chart.js": "^4.4.2",
     "chartjs-plugin-datalabels": "^2.2.0",
