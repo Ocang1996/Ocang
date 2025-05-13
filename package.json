@@ -11,7 +11,9 @@
     "dev:auto": "concurrently \"npm run dev:open\" \"npm run auto-refresh\"",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup:env": "node -e \"const fs = require('fs'); if (!fs.existsSync('.env')) { fs.copyFileSync('.env.example', '.env'); console.log('Created .env file from .env.example'); }\"",
+    "predeploy": "npm run setup:env"
   },
   "dependencies": {
     "@react-three/drei": "^9.99.0",
