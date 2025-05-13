@@ -242,3 +242,13 @@ Setelah melakukan perubahan kode, Anda perlu me-restart server pengembangan:
 ## Konfigurasi Bahasa
 
 Aplikasi mendukung bahasa Indonesia dan Inggris. Untuk beralih bahasa, gunakan toggle pada header aplikasi. 
+## Konfigurasi Supabase
+
+Aplikasi ini menggunakan Supabase sebagai backend. Untuk mengonfigurasi koneksi Supabase:
+
+1. Salin file '.env.example' ke '.env':
+   ``n   cp .env.example .env
+   ``n
+2. File .env sudah berisi kredensial Supabase yang benar. Jika Anda perlu menggantinya, masukkan URL dan API Key Supabase Anda sendiri.
+
+3. Restart aplikasi untuk menerapkan perubahan.
