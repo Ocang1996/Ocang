@@ -538,87 +538,88 @@ const Settings = ({ onLogout }: SettingsProps) => {
       <div className={`flex-1 transition-all duration-300 ease-in-out ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <Header title={t('settings_title')} onLogout={onLogout} />
         
-        <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
-          <div className="mb-6 mt-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
+        <div className="w-full px-2 sm:px-4 md:px-6 lg:px-10 pt-16 sm:pt-20 md:pt-24 pb-4 sm:pb-8">
+          <div className="mb-4 sm:mb-6 mt-2">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
               {t('settings_title')}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
               Konfigurasi dan kelola pengaturan aplikasi ASN Dashboard
             </p>
           </div>
 
           {/* Settings Content */}
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-sm border border-gray-200/30 dark:border-gray-700/30 overflow-hidden">
-            <div className="md:flex">
+            <div className="flex flex-col md:flex-row">
               {/* Sidebar Settings */}
-              <div className="md:w-64 p-5 border-r border-gray-200/50 dark:border-gray-700/50">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-5">{t('settings_title')}</h2>
-                <ul className="space-y-2">
-                  <li>
-                    <button 
-                      onClick={() => setActiveTab('notifications')}
-                      className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'notifications' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                    >
-                      <Bell size={18} className="mr-3" />
-                      <span>{t('settings_notifications')}</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button 
-                      onClick={() => setActiveTab('appearance')}
-                      className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'appearance' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                    >
-                      {settings.appearance.theme === 'dark' ? 
-                        <Moon size={18} className="mr-3" /> : 
-                        <Sun size={18} className="mr-3" />
-                      }
-                      <span>{t('settings_appearance')}</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button 
-                      onClick={() => setActiveTab('privacy')}
-                      className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'privacy' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                    >
-                      <Shield size={18} className="mr-3" />
-                      <span>{t('settings_privacy')}</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button 
-                      onClick={() => setActiveTab('account')}
-                      className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'account' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                    >
-                      <User size={18} className="mr-3" />
-                      <span>{t('settings_account')}</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button 
-                      onClick={() => setActiveTab('storage')}
-                      className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'storage' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                    >
-                      <Database size={18} className="mr-3" />
-                      <span>{t('settings_storage')}</span>
-                    </button>
-                  </li>
-                  {isSuperAdmin() && (
+              <div className="md:w-64 w-full flex md:block overflow-x-auto border-b md:border-b-0 md:border-r border-gray-200/50 dark:border-gray-700/50">
+                <div className="flex md:flex-col w-full">
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-5">{t('settings_title')}</h2>
+                  <ul className="space-y-2">
                     <li>
                       <button 
-                        onClick={() => setActiveTab('users')}
-                        className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'users' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                        onClick={() => setActiveTab('notifications')}
+                        className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'notifications' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                       >
-                        <UserCog size={18} className="mr-3" />
-                        <span>{t('user_management')}</span>
+                        <Bell size={18} className="mr-3" />
+                        <span>{t('settings_notifications')}</span>
                       </button>
                     </li>
-                  )}
-                </ul>
+                    <li>
+                      <button 
+                        onClick={() => setActiveTab('appearance')}
+                        className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'appearance' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                      >
+                        {settings.appearance.theme === 'dark' ? 
+                          <Moon size={18} className="mr-3" /> : 
+                          <Sun size={18} className="mr-3" />
+                        }
+                        <span>{t('settings_appearance')}</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        onClick={() => setActiveTab('privacy')}
+                        className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'privacy' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                      >
+                        <Shield size={18} className="mr-3" />
+                        <span>{t('settings_privacy')}</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        onClick={() => setActiveTab('account')}
+                        className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'account' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                      >
+                        <User size={18} className="mr-3" />
+                        <span>{t('settings_account')}</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        onClick={() => setActiveTab('storage')}
+                        className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'storage' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                      >
+                        <Database size={18} className="mr-3" />
+                        <span>{t('settings_storage')}</span>
+                      </button>
+                    </li>
+                    {isSuperAdmin() && (
+                      <li>
+                        <button 
+                          onClick={() => setActiveTab('users')}
+                          className={`flex items-center w-full px-4 py-3 text-left rounded-lg ${activeTab === 'users' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                        >
+                          <UserCog size={18} className="mr-3" />
+                          <span>{t('user_management')}</span>
+                        </button>
+                      </li>
+                    )}
+                  </ul>
+                </div>
               </div>
-              
-              {/* Settings Content */}
-              <div className="flex-1 p-6 pb-8">
+              {/* Main Content */}
+              <div className="flex-1 p-3 sm:p-5">
                 {/* Tab content heading */}
                 <div className="mb-6">
                   <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">

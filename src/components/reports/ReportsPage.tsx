@@ -97,13 +97,13 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
     // Count employees by type
     const employeeTypeCounts = {
       pns: 0,
-      p3k: 0,
+      pppk: 0,
       nonAsn: 0
     };
     
     employees.forEach(emp => {
       if (emp.employeeType === 'pns') employeeTypeCounts.pns++;
-      else if (emp.employeeType === 'p3k') employeeTypeCounts.p3k++;
+      else if (emp.employeeType === 'pppk') employeeTypeCounts.pppk++;
       else employeeTypeCounts.nonAsn++;
     });
     
@@ -246,7 +246,7 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
           },
           employeeTypesData: {
         pns: employeeTypeCounts.pns,
-        p3k: employeeTypeCounts.p3k,
+        pppk: employeeTypeCounts.pppk,
         nonAsn: employeeTypeCounts.nonAsn
           },
           genderData: {
@@ -442,7 +442,7 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
       },
       employeeTypesData: {
         pns: 0,
-        p3k: 0,
+        pppk: 0,
         nonAsn: 0
       },
       genderData: {
@@ -489,7 +489,7 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
           csvContent += 'Distribusi Jenis Pegawai\n';
           csvContent += 'Jenis,Jumlah,Persentase\n';
           csvContent += `PNS,${reportData.employeeTypesData.pns},${((reportData.employeeTypesData.pns / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
-          csvContent += `P3K,${reportData.employeeTypesData.p3k},${((reportData.employeeTypesData.p3k / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
+          csvContent += `PPPK,${reportData.employeeTypesData.pppk},${((reportData.employeeTypesData.pppk / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
           csvContent += `Non BSKDN,${reportData.employeeTypesData.nonAsn},${((reportData.employeeTypesData.nonAsn / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n\n`;
         }
         
@@ -762,12 +762,12 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
                 </td>
               </tr>
               <tr>
-                <td>P3K</td>
-                <td>${reportData.employeeTypesData.p3k}</td>
+                <td>PPPK</td>
+                <td>${reportData.employeeTypesData.pppk}</td>
                 <td>
-                  <div>${((reportData.employeeTypesData.p3k / reportData.stats.totalEmployees) * 100).toFixed(2)}%</div>
+                  <div>${((reportData.employeeTypesData.pppk / reportData.stats.totalEmployees) * 100).toFixed(2)}%</div>
                   <div class="percentage-bar-container">
-                    <div class="percentage-bar" style="width: ${((reportData.employeeTypesData.p3k / reportData.stats.totalEmployees) * 100).toFixed(2)}%"></div>
+                    <div class="percentage-bar" style="width: ${((reportData.employeeTypesData.pppk / reportData.stats.totalEmployees) * 100).toFixed(2)}%"></div>
                   </div>
                 </td>
               </tr>
@@ -959,7 +959,7 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
           excelData += 'Distribusi Jenis Pegawai\n';
           excelData += 'Jenis,Jumlah,Persentase\n';
           excelData += `PNS,${reportData.employeeTypesData.pns},${((reportData.employeeTypesData.pns / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
-          excelData += `P3K,${reportData.employeeTypesData.p3k},${((reportData.employeeTypesData.p3k / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
+          excelData += `PPPK,${reportData.employeeTypesData.pppk},${((reportData.employeeTypesData.pppk / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n`;
           excelData += `Non BSKDN,${reportData.employeeTypesData.nonAsn},${((reportData.employeeTypesData.nonAsn / reportData.stats.totalEmployees) * 100).toFixed(2)}%\n\n`;
         }
         
@@ -1149,9 +1149,9 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
                 <td>${((reportData.employeeTypesData.pns / reportData.stats.totalEmployees) * 100).toFixed(2)}%</td>
               </tr>
               <tr>
-                <td>P3K</td>
-                <td>${reportData.employeeTypesData.p3k}</td>
-                <td>${((reportData.employeeTypesData.p3k / reportData.stats.totalEmployees) * 100).toFixed(2)}%</td>
+                <td>PPPK</td>
+                <td>${reportData.employeeTypesData.pppk}</td>
+                <td>${((reportData.employeeTypesData.pppk / reportData.stats.totalEmployees) * 100).toFixed(2)}%</td>
               </tr>
               <tr>
                 <td>Non BSKDN</td>
@@ -1229,7 +1229,12 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
               <tr>
                 <td>${formatEducationLevel(item.level)}</td>
                 <td>${item.count}</td>
-                <td>${((item.count / reportData.stats.totalEmployees) * 100).toFixed(2)}%</td>
+                <td>
+                  <div>${((item.count / reportData.stats.totalEmployees) * 100).toFixed(2)}%</div>
+                  <div class="percentage-bar-container">
+                    <div class="percentage-bar" style="width: ${((item.count / reportData.stats.totalEmployees) * 100).toFixed(2)}%"></div>
+                  </div>
+                </td>
                   </tr>
             `;
           });
@@ -1254,7 +1259,12 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
               <tr>
                 <td>${item.group}</td>
                 <td>${item.count}</td>
-                <td>${((item.count / reportData.stats.totalEmployees) * 100).toFixed(2)}%</td>
+                <td>
+                  <div>${((item.count / reportData.stats.totalEmployees) * 100).toFixed(2)}%</div>
+                  <div class="percentage-bar-container">
+                    <div class="percentage-bar" style="width: ${((item.count / reportData.stats.totalEmployees) * 100).toFixed(2)}%"></div>
+                  </div>
+                </td>
               </tr>
             `;
           });
@@ -1359,36 +1369,36 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
   const ageChartRef = useRef<HTMLDivElement>(null); */
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className={`flex-1 transition-all duration-300 ease-in-out ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
       <Sidebar onLogout={onLogout} />
       <div className="flex-1 flex flex-col w-full min-w-0">
         <Header title={t('nav_reports')} onLogout={onLogout} />
-        <main className="flex-1 w-full min-w-0 px-2 sm:px-4 md:px-6 pt-20 pb-6 overflow-x-auto">
-          <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
-            <div className="mb-6 mt-2">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
+        <main className="flex-1 w-full min-w-0 px-2 sm:px-4 md:px-6 pt-16 sm:pt-20 pb-6 overflow-x-auto">
+          <div className="w-full px-2 sm:px-4 md:px-6 lg:px-10 pt-16 sm:pt-20 md:pt-24 pb-4 sm:pb-8">
+            <div className="mb-4 sm:mb-6 mt-2">
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
                 {t('available_reports')}
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">{t('reports_description')}</p>
+              <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{t('reports_description')}</p>
             </div>
             
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Reports selection and download section */}
-              <div className="xl:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 {/* Reports selector */}
-                <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-4 sm:p-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 sm:mb-6">
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('select_report_type')}</h2>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('combine_reports')}</p>
+                      <h2 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white">{t('select_report_type')}</h2>
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{t('combine_reports')}</p>
                     </div>
                     
                     {/* Report dropdown */}
-                    <div className="relative mt-4 md:mt-0" ref={reportDropdownRef}>
+                    <div className="relative mt-3 md:mt-0" ref={reportDropdownRef}>
                       <button
                         type="button"
                         onClick={() => setIsReportDropdownOpen(!isReportDropdownOpen)}
-                        className="flex justify-between items-center w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="flex justify-between items-center w-full px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       >
                         <span>{t('select_report')}</span>
                         <ChevronDown size={16} className={`ml-2 transition-transform duration-200 ${isReportDropdownOpen ? 'transform rotate-180' : ''}`} />
@@ -1407,9 +1417,9 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
                                 toggleReportSelection(report.id); 
                                 setIsReportDropdownOpen(false);
                               }}
-                              className={`flex items-start w-full px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedReports.includes(report.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                              className={`flex items-start w-full px-3 sm:px-4 py-2 sm:py-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedReports.includes(report.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
                             >
-                              <div className="flex-shrink-0 mr-3 mt-0.5">
+                              <div className="flex-shrink-0 mr-2 sm:mr-3 mt-0.5">
                                 {report.icon}
                               </div>
                               <div className="text-left">
@@ -1430,31 +1440,31 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
                 </div>
                 
                 {/* Selected reports */}
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {selectedReports.length === 0 ? (
-                    <div className="text-center py-8">
-                      <FileText size={40} className="mx-auto text-gray-400 dark:text-gray-600 mb-2" />
-                      <p className="text-gray-500 dark:text-gray-400">{t('report_info')}</p>
+                    <div className="text-center py-6 sm:py-8">
+                      <FileText size={32} className="mx-auto text-gray-400 dark:text-gray-600 mb-2" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('report_info')}</p>
                     </div>
                   ) : (
                     selectedReports.map((reportId: string) => {
                       const report = getReportInfo(reportId);
                       return report ? (
-                        <div key={reportId} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded-md p-3">
+                        <div key={reportId} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded-md p-2 sm:p-3">
                           <div className="flex items-center">
-                            <div className="mr-3">
+                            <div className="mr-2 sm:mr-3">
                               {report.icon}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-800 dark:text-white">{report.name}</p>
+                              <p className="font-medium text-sm sm:text-base text-gray-800 dark:text-white">{report.name}</p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">{report.description}</p>
                             </div>
                           </div>
                           <button 
                             onClick={() => removeReport(reportId)}
-                            className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                            className="p-1 sm:p-1.5 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                           >
-                            <X size={16} />
+                            <X size={14} className="sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       ) : null;
@@ -1464,19 +1474,19 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
               </div>
               
               {/* Format selector */}
-              <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+              <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-4 sm:p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 sm:mb-6">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('file_format')}</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('various_formats')}</p>
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white">{t('file_format')}</h2>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{t('various_formats')}</p>
                   </div>
                   
                   {/* Format dropdown */}
-                  <div className="relative mt-4 md:mt-0" ref={formatDropdownRef}>
+                  <div className="relative mt-3 md:mt-0" ref={formatDropdownRef}>
                     <button
                       type="button"
                       onClick={() => setIsFormatDropdownOpen(!isFormatDropdownOpen)}
-                      className="flex justify-between items-center w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="flex justify-between items-center w-full px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                       <span>{selectedFormat === 'pdf' && t('select_format_pdf')}
                             {selectedFormat === 'excel' && (t('select_format_xlsx') || 'Excel')}
@@ -1496,7 +1506,7 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
                               setSelectedFormat(format.id);
                               setIsFormatDropdownOpen(false);
                             }}
-                            className={`flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedFormat === format.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                            className={`flex items-center w-full px-3 sm:px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedFormat === format.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
                           >
                             {format.icon}
                             <span className="ml-2">{format.name}</span>
@@ -1512,9 +1522,9 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
                 
                 {/* Image format hint */}
                 {(['jpg', 'png'].includes(selectedFormat)) && (
-                  <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/50 rounded-md">
+                  <div className="mb-4 p-2 sm:p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/50 rounded-md">
                     <div className="flex items-start">
-                      <Info size={16} className="text-yellow-700 dark:text-yellow-500 mr-2 mt-0.5" />
+                      <Info size={14} className="text-yellow-700 dark:text-yellow-500 mr-2 mt-0.5" />
                       <p className="text-xs text-yellow-700 dark:text-yellow-500">
                         {t('image_formats')}
                       </p>
@@ -1526,7 +1536,7 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
                 <button
                   onClick={handleDownload}
                   disabled={selectedReports.length === 0 || isLoading}
-                  className={`flex items-center justify-center w-full py-3 px-4 rounded-md font-medium ${selectedReports.length === 0 || isLoading ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white'} transition-colors`}
+                  className={`flex items-center justify-center w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-md font-medium text-sm sm:text-base ${selectedReports.length === 0 || isLoading ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white'} transition-colors`}
                 >
                   <Download size={16} className="mr-2" />
                   {t('download_report_btn')}
@@ -1535,46 +1545,46 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
             </div>
             
             {/* Information panel */}
-            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl h-fit p-6">
-              <div className="flex justify-between items-start mb-6">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('report_info')}</h2>
+            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl h-fit p-4 sm:p-6 mt-4 sm:mt-6">
+              <div className="flex justify-between items-start mb-4 sm:mb-6">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white">{t('report_info')}</h2>
                 <span className="text-xs text-gray-500 dark:text-gray-400">{t('last_updated')}: {new Date().toLocaleDateString()}</span>
               </div>
               
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-1.5">
+                  <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1.5">
                     <Check size={14} className="text-green-500 mr-1.5" />
                     {t('realtime_data')}
                   </div>
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-1.5">
+                  <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1.5">
                     <Check size={14} className="text-green-500 mr-1.5" />
                     {t('various_formats')}
                   </div>
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     <Check size={14} className="text-green-500 mr-1.5" />
                     {t('combine_reports')}
                   </div>
                 </div>
                 
                 {isLoading ? (
-                  <div className="flex flex-col items-center py-6">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                    <span className="mt-3 text-sm text-gray-600 dark:text-gray-400">{t('loading_data')}</span>
+                  <div className="flex flex-col items-center py-4 sm:py-6">
+                    <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-blue-500"></div>
+                    <span className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">{t('loading_data')}</span>
                   </div>
                 ) : (
                   <div>
                     {/* Summary stats */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-3">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-2 sm:p-3">
                         <div className="text-xs text-gray-500 dark:text-gray-400">{t('total_employees')}</div>
-                        <div className="text-xl font-bold text-gray-800 dark:text-white mt-1">
+                        <div className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mt-1">
                           {dashboardData?.stats.totalEmployees || 0}
                         </div>
                       </div>
-                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-3">
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-2 sm:p-3">
                         <div className="text-xs text-gray-500 dark:text-gray-400">{t('total_departments')}</div>
-                        <div className="text-xl font-bold text-gray-800 dark:text-white mt-1">
+                        <div className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mt-1">
                           {Object.keys(dashboardData?.workUnitCounts || {}).length || 0}
                         </div>
                       </div>

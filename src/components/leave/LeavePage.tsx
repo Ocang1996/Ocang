@@ -64,31 +64,29 @@ const LeavePage = ({ onLogout }: LeavePageProps) => {
       <div className={`flex-1 transition-all duration-300 ease-in-out ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <Header title={t('leave_management')} onLogout={onLogout} />
         
-        <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
-          <div className="mb-6 mt-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
+        <div className="w-full px-2 sm:px-4 md:px-6 lg:px-10 pt-16 sm:pt-20 md:pt-24 pb-4 sm:pb-8">
+          <div className="mb-4 sm:mb-6 mt-2">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
               {t('leave_title')}
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-6">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 mb-4 sm:mb-6">
               {t('leave_description')}
             </p>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4 mb-4">
               <div className="relative w-full sm:w-auto">
                 <input
                   type="text"
                   placeholder={language === 'id' ? "Cari nama pegawai..." : "Search employee name..."}
-                  className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white dark:bg-gray-800/70 text-gray-800 dark:text-gray-100 text-xs"
+                  className="w-full sm:w-64 pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-md border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white dark:bg-gray-800/70 text-gray-800 dark:text-gray-100 text-xs sm:text-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
               </div>
-              
               {isAdmin() && (
                 <button
                   onClick={() => setShowAddForm(true)}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-colors text-xs font-medium"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-colors text-xs sm:text-sm font-medium"
                 >
                   <Plus size={16} strokeWidth={2.5} />
                   {t('leave_add')}
@@ -99,10 +97,10 @@ const LeavePage = ({ onLogout }: LeavePageProps) => {
           
           {/* Notifikasi */}
           {notification && (
-            <div className={`mb-4 p-3 rounded-lg flex items-center justify-between ${
+            <div className={`mb-4 p-2 sm:p-3 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 ${
               notification.type === 'success' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
             }`}>
-              <span>
+              <span className="flex items-center">
                 {notification.type === 'success' ? <Check size={18} className="inline mr-2" /> : <X size={18} className="inline mr-2" />}
                 {notification.message}
               </span>
@@ -113,30 +111,30 @@ const LeavePage = ({ onLogout }: LeavePageProps) => {
           )}
           
           {/* Tabel Data Cuti */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-sm border border-gray-200/30 dark:border-gray-700/30 overflow-hidden mb-6">
-            <div className="overflow-x-auto w-full">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm w-full">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-sm border border-gray-200/30 dark:border-gray-700/30 overflow-x-auto mb-6">
+            <div className="w-full min-w-[600px]">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs sm:text-sm">
                 <thead className="bg-gray-50/50 dark:bg-gray-700/50">
                   <tr>
-                    <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-3 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('leave_employee_name')}
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-3 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('leave_type')}
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-3 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('leave_allocation')}
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-3 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('leave_duration')}
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-3 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('leave_balance')}
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-3 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('leave_period')}
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-3 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('actions')}
                     </th>
                   </tr>
@@ -145,13 +143,13 @@ const LeavePage = ({ onLogout }: LeavePageProps) => {
                   {filteredLeaveData.length > 0 ? (
                     filteredLeaveData.map((leave) => (
                       <tr key={leave.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 whitespace-nowrap font-medium text-gray-900 dark:text-white">
                           {leave.employeeName}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-200">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-gray-600 dark:text-gray-200">
                           {leave.leaveType}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-200">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-gray-600 dark:text-gray-200">
                           {leave.leaveType === 'Tahunan' ? '12 hari' : 
                            leave.leaveType === 'Besar' ? '90 hari' : 
                            leave.leaveType === 'Melahirkan' ? '90 hari' : 
@@ -159,32 +157,32 @@ const LeavePage = ({ onLogout }: LeavePageProps) => {
                            leave.leaveType === 'Alasan Penting' ? '30 hari' : 
                            leave.leaveType === 'Di Luar Tanggungan Negara' ? '1095 hari' : '-'}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-200">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-gray-600 dark:text-gray-200">
                           {leave.duration} hari
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-200">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-gray-600 dark:text-gray-200">
                           {leave.leaveType === 'Tahunan' ? (
                             <span className="text-green-500">{12 - (leave.duration || 0)} hari</span>
                           ) : (
                             <span className="text-gray-500 dark:text-gray-400">-</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-200">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-gray-600 dark:text-gray-200">
                           {leave.startDate && leave.endDate ? (
                             `${new Date(leave.startDate).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')} - ${new Date(leave.endDate).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')}`
                           ) : (
                             '-'
                           )}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-left">
-                          <div className="flex space-x-3">
+                        <td className="px-3 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-left">
+                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                             <button
                               onClick={() => setSelectedLeave(leave.id)}
                               className="text-emerald-400 hover:text-emerald-300 focus:outline-none focus:text-emerald-300 flex items-center"
                               title={t('leave_action_view')}
                             >
                               <Eye size={15} className="mr-1" />
-                              <span className="text-xs">{language === 'id' ? 'Detail' : 'Details'}</span>
+                              <span className="text-xs sm:text-sm">{language === 'id' ? 'Detail' : 'Details'}</span>
                             </button>
                             {isAdmin() && (
                               <button
@@ -193,7 +191,7 @@ const LeavePage = ({ onLogout }: LeavePageProps) => {
                                 title={t('leave_delete')}
                               >
                                 <Trash2 size={15} className="mr-1" />
-                                <span className="text-xs">{language === 'id' ? 'Hapus' : 'Delete'}</span>
+                                <span className="text-xs sm:text-sm">{language === 'id' ? 'Hapus' : 'Delete'}</span>
                               </button>
                             )}
                           </div>

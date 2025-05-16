@@ -759,7 +759,7 @@ const EmployeeList = ({ onLogout }: EmployeeListProps) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className={`flex-1 transition-all duration-300 ease-in-out ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
       <Sidebar onLogout={onLogout} />
       <div className="flex-1 flex flex-col w-full min-w-0">
         <Header title={t('nav_employees')} onLogout={onLogout} />
