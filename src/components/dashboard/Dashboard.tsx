@@ -1111,16 +1111,11 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
   
   // Update bagian render dashboard dengan dark mode
   return (
-    <div className="flex">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <Sidebar onLogout={onLogout} />
-      
-      <div className={`flex-1 transition-all duration-300 ease-in-out ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
-        <Header 
-          title={t('dashboard_title')} 
-          onLogout={onLogout} 
-        />
-        
-        <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
+      <div className="flex-1 flex flex-col w-full min-w-0">
+        <Header title={t('dashboard_title')} onLogout={onLogout} />
+        <main className="flex-1 w-full min-w-0 px-2 sm:px-4 md:px-6 pt-20 pb-6 overflow-x-auto">
           <div className="mb-6 mt-2">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
               {t('dashboard_title')}
@@ -1129,7 +1124,6 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
               {t('dashboard_summary')}
             </p>
           </div>
-
           <div className="mb-8">
             <div className="flex overflow-x-auto no-scrollbar">
               <button {...styleTab('overview')}>
@@ -1144,212 +1138,210 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
             </div>
             <div className="h-0.5 bg-gray-200 dark:bg-gray-700 -mt-[1px]"></div>
           </div>
-
-          <div className={`transition-opacity duration-300 ${viewTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-
-          {/* Loading State */}
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-sm p-6 animate-pulse border border-gray-200/30 dark:border-gray-700/30">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-1/3 mb-2"></div>
-                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-1/2 mb-2"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-1/4"></div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <>
-              {/* Overview View */}
-              {selectedView === 'overview' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard 
-                      title={t('total_employees')}
-                      value={stats.totalEmployees} 
-                      icon={<Users size={20} />}
-                      change={stats.newEmployeesChange}
-                      period={language === 'id' ? "bulan" : "month"}
-                    />
-                    
-                    <StatCard 
-                      title={t('total_positions')}
-                      value={positionData.reduce((total, category) => 
-                        total + (category.subPositions?.length || 0), 0)}
-                      icon={<Award size={20} />}
-                      change={stats.positionsChange}
-                      period={language === 'id' ? "bulan" : "month"}
-                    />
-                    
-                    <div className="relative">
+          <div className={`transition-opacity duration-300 ${viewTransitioning ? 'opacity-0' : 'opacity-100'}`}> 
+            {/* Loading State */}
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-sm p-6 animate-pulse border border-gray-200/30 dark:border-gray-700/30">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-1/3 mb-2"></div>
+                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-1/2 mb-2"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-1/4"></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* Overview View */}
+                {selectedView === 'overview' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <StatCard 
+                        title={t('total_employees')}
+                        value={stats.totalEmployees} 
+                        icon={<Users size={20} />}
+                        change={stats.newEmployeesChange}
+                        period={language === 'id' ? "bulan" : "month"}
+                      />
+                      
+                      <StatCard 
+                        title={t('total_positions')}
+                        value={positionData.reduce((total, category) => 
+                          total + (category.subPositions?.length || 0), 0)}
+                        icon={<Award size={20} />}
+                        change={stats.positionsChange}
+                        period={language === 'id' ? "bulan" : "month"}
+                      />
+                      
+                      <div className="relative">
+                        <StatCard
+                          title="Cuti Pegawai"
+                          value={stats.pendingApprovals}
+                          icon={<CalendarDays size={20} className="text-emerald-600 dark:text-emerald-400" />}
+                          change={0}
+                          period={language === 'id' ? "bulan" : "month"}
+                        />
+                      </div>
+                      
                       <StatCard
-                        title="Cuti Pegawai"
-                        value={stats.pendingApprovals}
-                        icon={<CalendarDays size={20} className="text-emerald-600 dark:text-emerald-400" />}
-                        change={0}
+                        title={t('retirement_soon')}
+                        value={stats.retirementSoon}
+                        icon={<CalendarClock size={20} />}
+                        change={stats.retirementChange}
                         period={language === 'id' ? "bulan" : "month"}
                       />
                     </div>
                     
-                    <StatCard
-                      title={t('retirement_soon')}
-                      value={stats.retirementSoon}
-                      icon={<CalendarClock size={20} />}
-                      change={stats.retirementChange}
-                      period={language === 'id' ? "bulan" : "month"}
-                    />
+                    {/* Main dashboard grid dengan layout sesuai urutan yang diminta */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      {/* Baris 1: Jenis kepegawaian (kiri) dan distribusi jenis kelamin (kanan) */}
+                      <div className="col-span-12 lg:col-span-7">
+                        <EmployeeTypeChart 
+                          data={employeeTypesData} 
+                          onViewDetails={() => handleViewDetails('kepegawaian')}
+                          detailsPosition="bottom"
+                          key={`employee-type-chart-${Date.now()}-${employees.length}-${JSON.stringify(employeeTypesData)}`}
+                        />
+                      </div>
+                      
+                      <div className="col-span-12 lg:col-span-5">
+                        <GenderDistributionChart 
+                          data={genderData} 
+                          previousYearData={{
+                            male: genderData.male * 0.95,
+                            female: genderData.female * 0.96
+                          }}
+                          onViewDetails={() => handleViewDetails('kepegawaian')}
+                          detailsPosition="bottom"
+                        />
+                      </div>
+                      
+                      {/* Baris 2: Distribusi unit kerja (kiri) dan distribusi usia (kanan) */}
+                      <div className="col-span-12 lg:col-span-7">
+                        <WorkUnitDistributionChart 
+                          data={workUnitData} 
+                          onViewDetails={() => handleViewDetails('kepegawaian')}
+                        />
+                      </div>
+                      
+                      <div className="col-span-12 lg:col-span-5">
+                        <AgeDistributionChart 
+                          data={ageData} 
+                          onViewDetails={() => handleViewDetails('kepegawaian')}
+                          key={`age-chart-${forceUpdateKey}-${employees.length}-${JSON.stringify(ageData)}`}
+                        />
+                      </div>
+                      
+                      {/* Baris 3: Pangkat golongan (kiri) dan ringkasan pendidikan (kanan) */}
+                      <div className="col-span-12 lg:col-span-6">
+                        <RankDistributionChart 
+                          data={rankData}
+                          onViewDetails={() => handleViewDetails('kepegawaian')}
+                          detailsPosition="bottom"
+                        />
+                      </div>
+                      
+                      <div className="col-span-12 lg:col-span-6">
+                        <EducationLevelChart 
+                          data={educationData}
+                          onViewDetails={() => handleViewDetails('kepegawaian')}
+                          detailsPosition="bottom"
+                        />
+                      </div>
+                      
+                      {/* Baris 4: Prediksi pensiun (full width) */}
+                      <div className="col-span-12">
+                        <RetirementBupChart 
+                          data={retirementBupData} 
+                          onViewDetails={() => handleViewDetails('pensiun')}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  
-                  {/* Main dashboard grid dengan layout sesuai urutan yang diminta */}
-                  <div className="grid grid-cols-12 gap-4">
-                    {/* Baris 1: Jenis kepegawaian (kiri) dan distribusi jenis kelamin (kanan) */}
-                    <div className="col-span-12 lg:col-span-7">
-                      <EmployeeTypeChart 
-                        data={employeeTypesData} 
-                        onViewDetails={() => handleViewDetails('kepegawaian')}
-                        detailsPosition="bottom"
-                        key={`employee-type-chart-${Date.now()}-${employees.length}-${JSON.stringify(employeeTypesData)}`}
-                      />
-                    </div>
+                )}
+                
+                {/* Kepegawaian View */}
+                {selectedView === 'kepegawaian' && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold bg-gradient-to-r from-[#2C3E50] to-[#3498DB] dark:from-emerald-500 dark:to-emerald-300 bg-clip-text text-transparent mb-2">
+                      {t('data_employment')}
+                    </h2>
                     
-                    <div className="col-span-12 lg:col-span-5">
-                      <GenderDistributionChart 
-                        data={genderData} 
-                        previousYearData={{
-                          male: genderData.male * 0.95,
-                          female: genderData.female * 0.96
-                        }}
-                        onViewDetails={() => handleViewDetails('kepegawaian')}
-                        detailsPosition="bottom"
-                      />
+                    {/* Grid layout dengan urutan yang sama seperti tab overview */}
+                    <div className="grid grid-cols-12 gap-4">
+                      {/* Baris 1: Jenis kepegawaian (kiri) dan distribusi jenis kelamin (kanan) */}
+                      <div className="col-span-12 lg:col-span-7">
+                        <EmployeeTypeChart 
+                          data={employeeTypesData}
+                          detailsPosition="bottom" 
+                          key={`employee-type-chart-kepegawaian-${Date.now()}-${employees.length}-${JSON.stringify(employeeTypesData)}`}
+                        />
+                      </div>
+                      
+                      <div className="col-span-12 lg:col-span-5">
+                        <GenderDistributionChart 
+                          data={genderData}
+                          previousYearData={{
+                            male: genderData.male * 0.95,
+                            female: genderData.female * 0.96
+                          }}
+                          detailsPosition="bottom" 
+                        />
+                      </div>
+                      
+                      {/* Baris 2: Distribusi unit kerja (kiri) dan distribusi usia (kanan) */}
+                      <div className="col-span-12 lg:col-span-7">
+                        <WorkUnitDistributionChart data={workUnitData} />
+                      </div>
+                      
+                      <div className="col-span-12 lg:col-span-5">
+                        <AgeDistributionChart 
+                          data={ageData} 
+                          key={`age-chart-kepegawaian-${forceUpdateKey}-${employees.length}-${JSON.stringify(ageData)}`}
+                        />
+                      </div>
+                      
+                      {/* Baris 3: Pangkat golongan (kiri) dan ringkasan pendidikan (kanan) */}
+                      <div className="col-span-12 lg:col-span-6">
+                        <RankDistributionChart 
+                          data={rankData}
+                          detailsPosition="bottom" 
+                        />
+                      </div>
+                      
+                      <div className="col-span-12 lg:col-span-6">
+                        <EducationLevelChart 
+                          data={educationData}
+                          detailsPosition="bottom" 
+                        />
+                      </div>
+                      
+                      {/* Row 4: Position chart, full width */}
+                      <div className="col-span-12">
+                        <PositionDistributionChart data={positionData} />
+                      </div>
                     </div>
+                  </div>
+                )}
+                
+                {/* Retirement Prediction View */}
+                {selectedView === 'pensiun' && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2C3E50] to-[#3498DB] dark:from-emerald-500 dark:to-emerald-300 bg-clip-text text-transparent">
+                      {t('retirement_prediction')}
+                    </h2>
                     
-                    {/* Baris 2: Distribusi unit kerja (kiri) dan distribusi usia (kanan) */}
-                    <div className="col-span-12 lg:col-span-7">
-                      <WorkUnitDistributionChart 
-                        data={workUnitData} 
-                        onViewDetails={() => handleViewDetails('kepegawaian')}
-                      />
-                    </div>
-                    
-                    <div className="col-span-12 lg:col-span-5">
-                      <AgeDistributionChart 
-                        data={ageData} 
-                        onViewDetails={() => handleViewDetails('kepegawaian')}
-                        key={`age-chart-${forceUpdateKey}-${employees.length}-${JSON.stringify(ageData)}`}
-                      />
-                    </div>
-                    
-                    {/* Baris 3: Pangkat golongan (kiri) dan ringkasan pendidikan (kanan) */}
-                    <div className="col-span-12 lg:col-span-6">
-                      <RankDistributionChart 
-                        data={rankData}
-                        onViewDetails={() => handleViewDetails('kepegawaian')}
-                        detailsPosition="bottom"
-                      />
-                    </div>
-                    
-                    <div className="col-span-12 lg:col-span-6">
-                      <EducationLevelChart 
-                        data={educationData}
-                        onViewDetails={() => handleViewDetails('kepegawaian')}
-                        detailsPosition="bottom"
-                      />
-                    </div>
-                    
-                    {/* Baris 4: Prediksi pensiun (full width) */}
-                    <div className="col-span-12">
+                    <div className="grid grid-cols-1 gap-6">
                       <RetirementBupChart 
-                        data={retirementBupData} 
-                        onViewDetails={() => handleViewDetails('pensiun')}
+                        data={retirementBupData}
                       />
                     </div>
                   </div>
-                </div>
-              )}
-              
-              {/* Kepegawaian View */}
-              {selectedView === 'kepegawaian' && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold bg-gradient-to-r from-[#2C3E50] to-[#3498DB] dark:from-emerald-500 dark:to-emerald-300 bg-clip-text text-transparent mb-2">
-                    {t('data_employment')}
-                  </h2>
-                  
-                  {/* Grid layout dengan urutan yang sama seperti tab overview */}
-                  <div className="grid grid-cols-12 gap-4">
-                    {/* Baris 1: Jenis kepegawaian (kiri) dan distribusi jenis kelamin (kanan) */}
-                    <div className="col-span-12 lg:col-span-7">
-                      <EmployeeTypeChart 
-                        data={employeeTypesData}
-                        detailsPosition="bottom" 
-                        key={`employee-type-chart-kepegawaian-${Date.now()}-${employees.length}-${JSON.stringify(employeeTypesData)}`}
-                      />
-                    </div>
-                    
-                    <div className="col-span-12 lg:col-span-5">
-                      <GenderDistributionChart 
-                        data={genderData}
-                        previousYearData={{
-                          male: genderData.male * 0.95,
-                          female: genderData.female * 0.96
-                        }}
-                        detailsPosition="bottom" 
-                      />
-                    </div>
-                    
-                    {/* Baris 2: Distribusi unit kerja (kiri) dan distribusi usia (kanan) */}
-                    <div className="col-span-12 lg:col-span-7">
-                      <WorkUnitDistributionChart data={workUnitData} />
-                    </div>
-                    
-                    <div className="col-span-12 lg:col-span-5">
-                      <AgeDistributionChart 
-                        data={ageData} 
-                        key={`age-chart-kepegawaian-${forceUpdateKey}-${employees.length}-${JSON.stringify(ageData)}`}
-                      />
-                    </div>
-                    
-                    {/* Baris 3: Pangkat golongan (kiri) dan ringkasan pendidikan (kanan) */}
-                    <div className="col-span-12 lg:col-span-6">
-                      <RankDistributionChart 
-                        data={rankData}
-                        detailsPosition="bottom" 
-                      />
-                    </div>
-                    
-                    <div className="col-span-12 lg:col-span-6">
-                      <EducationLevelChart 
-                        data={educationData}
-                        detailsPosition="bottom" 
-                      />
-                    </div>
-                    
-                    {/* Row 4: Position chart, full width */}
-                    <div className="col-span-12">
-                      <PositionDistributionChart data={positionData} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Retirement Prediction View */}
-              {selectedView === 'pensiun' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2C3E50] to-[#3498DB] dark:from-emerald-500 dark:to-emerald-300 bg-clip-text text-transparent">
-                    {t('retirement_prediction')}
-                  </h2>
-                  
-                  <div className="grid grid-cols-1 gap-6">
-                    <RetirementBupChart 
-                      data={retirementBupData}
-                    />
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
