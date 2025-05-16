@@ -1359,73 +1359,73 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
   const ageChartRef = useRef<HTMLDivElement>(null); */
 
   return (
-    <div className="flex">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <Sidebar onLogout={onLogout} />
-      
-      <div className={`flex-1 transition-all duration-300 ease-in-out ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
-        <Header title={t('reports_title')} onLogout={onLogout} />
-        
-        <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
-          <div className="mb-6 mt-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
-              {t('available_reports')}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('reports_description')}</p>
-          </div>
-          
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {/* Reports selection and download section */}
-            <div className="xl:col-span-2 space-y-6">
-              {/* Reports selector */}
-              <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('select_report_type')}</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('combine_reports')}</p>
-                  </div>
-                  
-                  {/* Report dropdown */}
-                  <div className="relative mt-4 md:mt-0" ref={reportDropdownRef}>
-                    <button
-                      type="button"
-                      onClick={() => setIsReportDropdownOpen(!isReportDropdownOpen)}
-                      className="flex justify-between items-center w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    >
-                      <span>{t('select_report')}</span>
-                      <ChevronDown size={16} className={`ml-2 transition-transform duration-200 ${isReportDropdownOpen ? 'transform rotate-180' : ''}`} />
-                    </button>
-
-                    {/* Report Selection Dropdown */}
-                    {isReportDropdownOpen && (
-                      <div
-                        ref={reportDropdownRef}
-                        className="absolute z-10 mt-1 right-0 left-auto w-full min-w-[220px] bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+      <div className="flex-1 flex flex-col w-full min-w-0">
+        <Header title={t('nav_reports')} onLogout={onLogout} />
+        <main className="flex-1 w-full min-w-0 px-2 sm:px-4 md:px-6 pt-20 pb-6 overflow-x-auto">
+          <div className="w-full px-4 sm:px-6 md:px-10 pt-24 pb-8">
+            <div className="mb-6 mt-2">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
+                {t('available_reports')}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">{t('reports_description')}</p>
+            </div>
+            
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {/* Reports selection and download section */}
+              <div className="xl:col-span-2 space-y-6">
+                {/* Reports selector */}
+                <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{t('select_report_type')}</h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('combine_reports')}</p>
+                    </div>
+                    
+                    {/* Report dropdown */}
+                    <div className="relative mt-4 md:mt-0" ref={reportDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsReportDropdownOpen(!isReportDropdownOpen)}
+                        className="flex justify-between items-center w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       >
-                        {availableReports.map((report) => (
-                          <button 
-                            key={report.id}
-                            onClick={() => {
-                              toggleReportSelection(report.id); 
-                              setIsReportDropdownOpen(false);
-                            }}
-                            className={`flex items-start w-full px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedReports.includes(report.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
-                          >
-                            <div className="flex-shrink-0 mr-3 mt-0.5">
-                              {report.icon}
-                            </div>
-                            <div className="text-left">
-                              <p className="font-medium text-gray-800 dark:text-white">{report.name}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">{report.description}</p>
-                            </div>
-                            {selectedReports.includes(report.id) && (
-                              <div className="ml-auto">
-                                <Check size={16} className="text-blue-600 dark:text-blue-400" />
+                        <span>{t('select_report')}</span>
+                        <ChevronDown size={16} className={`ml-2 transition-transform duration-200 ${isReportDropdownOpen ? 'transform rotate-180' : ''}`} />
+                      </button>
+
+                      {/* Report Selection Dropdown */}
+                      {isReportDropdownOpen && (
+                        <div
+                          ref={reportDropdownRef}
+                          className="absolute z-10 mt-1 right-0 left-auto w-full min-w-[220px] bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                        >
+                          {availableReports.map((report) => (
+                            <button 
+                              key={report.id}
+                              onClick={() => {
+                                toggleReportSelection(report.id); 
+                                setIsReportDropdownOpen(false);
+                              }}
+                              className={`flex items-start w-full px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedReports.includes(report.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                            >
+                              <div className="flex-shrink-0 mr-3 mt-0.5">
+                                {report.icon}
                               </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                              <div className="text-left">
+                                <p className="font-medium text-gray-800 dark:text-white">{report.name}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{report.description}</p>
+                              </div>
+                              {selectedReports.includes(report.id) && (
+                                <div className="ml-auto">
+                                  <Check size={16} className="text-blue-600 dark:text-blue-400" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -1584,7 +1584,7 @@ const ReportsPage = ({ onLogout }: ReportsPageProps) => {
               </div>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
