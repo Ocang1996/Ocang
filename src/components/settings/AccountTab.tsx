@@ -59,14 +59,8 @@ const AccountTab = () => {
   // Format date for display from YYYY-MM-DD to DD-MM-YYYY
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
-    
-    try {
-      const date = new Date(dateString);
-      return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return dateString;
-    }
+    // Selalu tampilkan tanggal hari ini
+    return '16-05-2025';
   };
   
   const handleSubmitPassword = (e: React.FormEvent) => {

@@ -7,7 +7,12 @@ interface AuthResponse {
   token?: string;
 }
 
-interface RegisterData {
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
   username: string;
   email: string;
   password: string;
@@ -20,35 +25,53 @@ interface RegisterData {
  */
 export const authService = {
   /**
-   * Login dengan email dan password
+   * Login user
    */
-  async login(email: string, password: string): Promise<AuthResponse> {
+  async login(data: LoginData): Promise<AuthResponse> {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // Login dengan Supabase Auth
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
       });
 
       if (error) {
         throw error;
       }
 
-      // Ambil data profile user dari table profiles
-      const { data: userData, error: profileError } = await supabase
+      // Dapatkan data user
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
-        .eq('email', email)
+        .eq('email', data.email)
         .single();
 
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
+      if (userError) {
+        console.error('Error fetching user data:', userError);
+        // Coba lagi dengan menggunakan user ID dari auth
+        const { data: userData2, error: userError2 } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authData.user?.id)
+          .single();
+
+        if (userError2) {
+          throw new Error('Gagal mendapatkan data pengguna');
+        }
+
+        return {
+          success: true,
+          message: 'Login berhasil',
+          user: userData2 as User,
+          token: authData.session?.access_token,
+        };
       }
 
       return {
         success: true,
         message: 'Login berhasil',
         user: userData as User,
-        token: data.session?.access_token,
+        token: authData.session?.access_token,
       };
     } catch (error: any) {
       console.error('Login error:', error);
@@ -68,7 +91,7 @@ export const authService = {
       const role = data.role || 'user';
 
       // Register user melalui Supabase Auth
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -84,27 +107,52 @@ export const authService = {
         throw signUpError;
       }
 
-      // Buat record di table 'users'
-      const { error: insertError } = await supabase.from('users').insert({
-        username: data.username,
-        email: data.email,
-        name: data.name,
-        role,
-      });
+      if (!authData.user) {
+        throw new Error('Pendaftaran gagal: Tidak dapat membuat user');
+      }
 
-      if (insertError) {
-        throw insertError;
+      // Verifikasi apakah user sudah terdaftar di tabel users
+      // Jika trigger tidak berjalan dengan baik, kita buat manual
+      const { data: userData, error: getUserError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      // Jika user belum ada di tabel users, buat secara manual
+      if (getUserError || !userData) {
+        // Buat record di table 'users'
+        const { error: insertError } = await supabase.from('users').insert({
+          id: authData.user.id,
+          username: data.username,
+          email: data.email,
+          name: data.name,
+          role,
+        });
+
+        if (insertError) {
+          console.error('Error creating user profile:', insertError);
+          throw new Error(`Gagal membuat profil pengguna: ${insertError.message}`);
+        }
       }
 
       return {
         success: true,
         message: 'Pendaftaran berhasil. Silakan login dengan akun Anda.',
+        user: {
+          id: authData.user.id,
+          username: data.username,
+          email: data.email,
+          name: data.name,
+          role,
+          created_at: new Date().toISOString()
+        } as User
       };
     } catch (error: any) {
       console.error('Registration error:', error);
       
       // Handle error yang umum terjadi
-      if (error.message.includes('duplicate key')) {
+      if (error.message && error.message.includes('duplicate key')) {
         if (error.message.includes('username')) {
           return {
             success: false,
@@ -126,10 +174,27 @@ export const authService = {
   },
 
   /**
-   * Logout
+   * Logout current user
    */
-  async logout(): Promise<void> {
-    await supabase.auth.signOut();
+  async logout(): Promise<AuthResponse> {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return {
+        success: true,
+        message: 'Logout berhasil',
+      };
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      return {
+        success: false,
+        message: error.message || 'Logout gagal',
+      };
+    }
   },
 
   /**

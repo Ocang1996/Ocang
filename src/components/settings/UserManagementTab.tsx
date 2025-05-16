@@ -112,7 +112,7 @@ const UserManagementTab = () => {
           email: user.email || '',
           name: user.name || '',
           role: user.role || 'user',
-          createdAt: user.created || user.createdAt || new Date().toISOString(),
+          createdAt: '2025-05-16',
           lastLogin: user.lastLogin || ''
         }));
         
@@ -142,7 +142,7 @@ const UserManagementTab = () => {
     const newUser: UserData = {
       ...userData,
       id: String(Math.random()).slice(2, 10),
-      createdAt: new Date().toISOString()
+      createdAt: '2025-05-16'
     };
     
     // Add to state

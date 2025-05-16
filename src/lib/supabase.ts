@@ -18,190 +18,122 @@ export interface SupabaseClient {
   rpc: (functionName: string, params?: any) => Promise<{ data: any; error: any }>;
 }
 
-// Ambil environment variables dari .env atau gunakan nilai default untuk development
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-url.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
+// Ambil environment variables dari .env
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://xyzcompany.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock-key-for-testing';
 
-// Fungsi lazy untuk membuat Supabase client
+// Perbaikan: Buat fungsi singleton untuk Supabase client dengan penanganan error yang lebih baik
 let _supabase: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient {
-  if (!_supabase) {
-    try {
-      // Mencoba load dari CDN jika modul belum terinstal
-      if (typeof window !== 'undefined' && !(window as any).supabase) {
-        console.warn('Supabase client not initialized. Loading from CDN...');
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-        document.head.appendChild(script);
-        
-        // Buat client sementara dengan mock
-        _supabase = createMockClient();
-        
-        // Ketika script dimuat, buat client sungguhan
-        script.onload = () => {
+  if (_supabase) {
+    return _supabase;
+  }
+
+  try {
+    // Log untuk debugging
+    console.log('Initializing Supabase client with URL:', supabaseUrl);
+    
+    // Cek apakah window.supabase tersedia (loaded from CDN)
+    if (typeof window !== 'undefined' && (window as any).supabase) {
+      const { createClient } = (window as any).supabase;
+      _supabase = createClient(supabaseUrl, supabaseAnonKey);
+      console.log('Supabase client initialized from window.supabase');
+      return _supabase;
+    }
+    
+    // Jika tidak tersedia, gunakan mock client
+    console.warn('Using mock Supabase client. Functionality will be limited.');
+    _supabase = createMockClient();
+    
+    // Coba load dari CDN untuk penggunaan berikutnya
+    if (typeof window !== 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+      script.onload = () => {
+        try {
           const { createClient } = (window as any).supabase;
           _supabase = createClient(supabaseUrl, supabaseAnonKey);
-          console.log('Supabase client loaded from CDN');
-        };
-      } else {
-        // Jika kita di server atau supabase sudah ada di window
-        try {
-          // Mencoba dynamic import tanpa menggunakan import() syntax
-          // untuk menghindari error TypeScript
-          // Menggunakan mock client terlebih dahulu, yang akan diganti
-          // ketika script selesai loading
-          _supabase = createMockClient();
-          
-          if (typeof window !== 'undefined') {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-            document.head.appendChild(script);
-            
-            script.onload = () => {
-              const { createClient } = (window as any).supabase;
-              _supabase = createClient(supabaseUrl, supabaseAnonKey);
-              console.log('Supabase client initialized via CDN');
-            };
-          }
+          console.log('Supabase client loaded and initialized from CDN');
         } catch (e) {
-          console.error('Failed to load Supabase client:', e);
-          _supabase = createMockClient();
+          console.error('Error creating Supabase client after CDN load:', e);
         }
-      }
-    } catch (e) {
-      console.error('Error initializing Supabase client:', e);
-      _supabase = createMockClient();
+      };
+      script.onerror = (e) => {
+        console.error('Failed to load Supabase client from CDN:', e);
+      };
+      document.head.appendChild(script);
     }
+  } catch (e) {
+    console.error('Error initializing Supabase client:', e);
+    _supabase = createMockClient();
   }
   
-  // Always return a valid SupabaseClient, never null
-  return _supabase || createMockClient();
+  // Memastikan _supabase tidak null
+  return _supabase as SupabaseClient;
 }
 
-// Buat mock client untuk fallback
+// Buat mock client untuk fallback (dibuat lebih sederhana dan handal)
 function createMockClient(): SupabaseClient {
-  // Type definitions untuk mock client
-  interface QueryConfig {
-    orderField: string;
-    limitVal: number;
-    offsetVal: number;
-    filters: Record<string, any>;
-  }
-
-  interface QueryResponse<T> {
-    data: T;
-    error: any | null;
-    count: number;
-  }
-
-  interface QueryBuilder {
-    eq: (field: string, value: any) => QueryBuilder;
-    or: (conditions: string) => QueryBuilder;
-    order: (column: string) => QueryBuilder;
-    limit: (limit: number) => QueryBuilder;
-    offset: (offset: number) => QueryBuilder;
-    range: (start: number, end: number) => Promise<QueryResponse<any[]>>;
-    single: () => Promise<QueryResponse<any>>;
-    then: (callback: (result: QueryResponse<any[]>) => any) => any;
-    [key: string]: any; // Untuk mendukung dynamic properties
-  }
-
-  // Buat fungsi helper untuk mengembalikan data yang sama
-  const createSuccessResponse = <T>(data: T): Promise<QueryResponse<T>> => {
-    return Promise.resolve({
-      data,
-      error: null,
-      count: Array.isArray(data) ? data.length : 0
-    });
-  };
+  console.log('Creating mock Supabase client');
   
-  // Buat query builder dasar yang bisa digunakan di berbagai tempat
-  const createQueryBuilder = (): QueryBuilder => {
-    // Menyimpan konfigurasi query
-    const config: QueryConfig = {
-      orderField: '',
-      limitVal: 10,
-      offsetVal: 0,
-      filters: {}
-    };
-    
-    // Builder object dengan semua method yang bisa dirantai
-    const builder: QueryBuilder = {
-      // Filter methods
-      eq: (field: string, value: any) => {
-        config.filters[field] = value;
-        return builder;
-      },
-      or: (_conditions: string) => {
-        // Conditions parameter tidak digunakan untuk mock, tapi disimpan untuk tipe
-        return builder;
-      },
-      // Ordering dan pagination
-      order: (column: string) => {
-        config.orderField = column;
-        return builder;
-      },
-      limit: (limit: number) => {
-        config.limitVal = limit;
-        return builder;
-      },
-      offset: (offset: number) => {
-        config.offsetVal = offset;
-        return builder;
-      },
-      range: (start: number, end: number) => {
-        config.offsetVal = start;
-        config.limitVal = end - start + 1;
-        return createSuccessResponse([]);
-      },
-      // Fetch methods
-      single: () => createSuccessResponse(null),
-      // Execute query dan return results
-      then: (callback) => callback(createSuccessResponse([]))
-    };
-    
-    return builder;
+  const mockResponse = (data: any = null) => Promise.resolve({ 
+    data, 
+    error: null 
+  });
+  
+  const mockQueryBuilder = {
+    eq: () => mockQueryBuilder,
+    or: () => mockQueryBuilder,
+    order: () => mockQueryBuilder,
+    limit: () => mockQueryBuilder,
+    offset: () => mockQueryBuilder,
+    range: () => mockResponse([]),
+    single: () => mockResponse(null),
+    then: (callback: Function) => callback(mockResponse([]))
   };
   
   return {
-    from: (_table: string) => ({
-      select: (_columns: string | null = '*', _options: any = { count: 'exact' }) => createQueryBuilder(),
+    from: () => ({
+      select: () => mockQueryBuilder,
       insert: () => ({
         select: () => ({
-          single: () => Promise.resolve({ data: null, error: null }),
-        }),
+          single: () => mockResponse(null)
+        })
       }),
       update: () => ({
         eq: () => ({
           select: () => ({
-            single: () => Promise.resolve({ data: null, error: null }),
-          }),
-        }),
+            single: () => mockResponse(null)
+          })
+        })
       }),
       delete: () => ({
-        eq: () => Promise.resolve({ error: null }),
-      }),
+        eq: () => mockResponse(null)
+      })
     }),
     auth: {
-      signUp: () => Promise.resolve({ data: null, error: null }),
-      signInWithPassword: () => Promise.resolve({ data: null, error: null }),
-      signOut: () => Promise.resolve({ error: null }),
-      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-      resetPasswordForEmail: () => Promise.resolve({ data: null, error: null }),
-      updateUser: () => Promise.resolve({ data: null, error: null }),
+      signUp: () => mockResponse({ user: null, session: null }),
+      signInWithPassword: () => mockResponse({ user: null, session: null }),
+      signOut: () => mockResponse(null),
+      getSession: () => mockResponse({ session: null }),
+      resetPasswordForEmail: () => mockResponse(null),
+      updateUser: () => mockResponse({ user: null })
     },
     storage: {
       from: () => ({
-        upload: () => Promise.resolve({ data: null, error: null }),
-        getPublicUrl: () => ({ data: { publicUrl: '' } }),
-      }),
+        upload: () => mockResponse(null),
+        getPublicUrl: () => ({ data: { publicUrl: '' } })
+      })
     },
-    rpc: (functionName: string, params?: any) => Promise.resolve({ data: null, error: null }),
+    rpc: (functionName: string, params?: any) => {
+      console.log(`Mock RPC called: ${functionName}`, params);
+      return mockResponse(null);
+    }
   };
 }
 
-// Alias untuk backward compatibility
+// Ekspor instance Supabase client
 export const supabase = getSupabaseClient();
 
 // Tipe data untuk tabel users

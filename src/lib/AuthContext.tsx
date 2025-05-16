@@ -6,45 +6,102 @@ import {
   getCurrentSession,
   User
 } from './authService';
+import { supabase } from './supabase';
+
+// Definisikan tipe untuk auth events
+type AuthChangeEvent = 
+  | 'SIGNED_IN'
+  | 'SIGNED_OUT'
+  | 'USER_UPDATED'
+  | 'PASSWORD_RECOVERY'
+  | 'TOKEN_REFRESHED';
+
+// Definisikan tipe untuk session
+interface Session {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  user: {
+    id: string;
+    email: string;
+  };
+}
 
 interface AuthContextType {
   user: User | null;
-  session: any | null;
+  session: Session | null;
   loading: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<any | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load user data on mount
+  // Fungsi untuk refresh session
+  const refreshSession = async () => {
+    try {
+      console.log('Refreshing auth session...');
+      setLoading(true);
+      
+      const session = await getCurrentSession();
+      setSession(session);
+      
+      if (session) {
+        const userData = await getCurrentUser();
+        setUser(userData);
+        console.log('Session refreshed successfully');
+      } else {
+        console.log('No active session found during refresh');
+        setUser(null);
+      }
+      
+      setError(null);
+    } catch (err: any) {
+      console.error('Error refreshing session:', err);
+      // Jangan set error, karena ini bisa terjadi saat refresh normal
+      // Dan akan menyebabkan UI menampilkan error yang tidak perlu
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Setup listener untuk perubahan auth state
   useEffect(() => {
-    const loadUserData = async () => {
+    // Gunakan solusi alternatif untuk menangani autentikasi
+    const checkSession = async () => {
       try {
-        const session = await getCurrentSession();
-        setSession(session);
-        
-        if (session) {
+        const currentSession = await getCurrentSession();
+        if (currentSession) {
           const userData = await getCurrentUser();
           setUser(userData);
+          setSession(currentSession);
         }
-      } catch (err: any) {
-        console.error('Error loading auth data:', err);
-        setError(err.message || 'Authentication error');
+      } catch (err) {
+        console.error('Error checking initial session:', err);
       } finally {
         setLoading(false);
       }
     };
-    
-    loadUserData();
+
+    // Load initial session data
+    checkSession();
+
+    // Set up interval untuk check session (sebagai pengganti onAuthStateChange)
+    const interval = setInterval(refreshSession, 5 * 60 * 1000); // check setiap 5 menit
+
+    // Cleanup interval
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   // Sign in handler
@@ -57,12 +114,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       setUser(user);
       setSession(session);
-      setLoading(false);
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message || 'Login failed. Please check your credentials.');
-      setLoading(false);
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,12 +128,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setLoading(true);
       await authSignOut();
+      // Reset state setelah logout
       setUser(null);
       setSession(null);
-      setLoading(false);
     } catch (err: any) {
       console.error('Sign out error:', err);
       setError(err.message || 'Sign out failed');
+    } finally {
       setLoading(false);
     }
   };
@@ -95,7 +153,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         error,
         signIn,
         signOut,
-        clearError
+        clearError,
+        refreshSession
       }}
     >
       {children}

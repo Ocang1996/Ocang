@@ -19,7 +19,7 @@ import SupabaseTestPage from './pages/SupabaseTestPage';
 import SupabaseDebugPage from './pages/SupabaseDebugPage';
 import { UserRole } from './types/auth';
 import { initSessionTimeout } from './lib/sessionUtils';
-// import { isAdmin } from './lib/auth';
+import { AuthProvider } from './lib/AuthContext';
 import { LeaveProvider } from './lib/LeaveContext';
 import { SidebarProvider } from './lib/SidebarContext';
 import { ThrottleProvider } from './components/settings/ThrottleProvider';
@@ -157,117 +157,116 @@ function App() {
   return (
     <ThrottleProvider defaultLevel="medium">
       <SidebarProvider>
-        <LeaveProvider>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          {sessionExpired && (
-            <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-70 z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg">
-                <h2 className="text-xl font-semibold mb-4">Sesi Anda Telah Berakhir</h2>
-                <p className="mb-4">Silakan login kembali untuk melanjutkan.</p>
-                <button 
-                  onClick={() => setSessionExpired(false)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Tutup
-                </button>
+        <AuthProvider>
+          <LeaveProvider>
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            {sessionExpired && (
+              <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-70 z-50">
+                <div className="bg-white p-6 rounded-lg shadow-lg">
+                  <h2 className="text-xl font-semibold mb-4">Sesi Anda Telah Berakhir</h2>
+                  <p className="mb-4">Silakan login kembali untuk melanjutkan.</p>
+                  <button 
+                    onClick={() => setSessionExpired(false)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Tutup
+                  </button>
+                </div>
               </div>
+            )}
+            {requireTwoFA ? (
+              <TwoFactorAuth 
+                username={pendingUser}
+                onVerify={handleVerifyTwoFA}
+                onCancel={handleCancelTwoFA}
+              />
+            ) : (
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                
+                <Route path="/login" element={
+                  isAuthenticated ? <Navigate to="/dashboard" /> : 
+                  <Login onLogin={handleLogin} />
+                } />
+                
+                <Route path="/register" element={
+                  isAuthenticated ? <Navigate to="/dashboard" /> : 
+                  <Register />
+                } />
+                
+                <Route path="/reset-password" element={<ResetPassword />} />
+                
+                {/* Dashboard route wrapped in ProtectedRoute */}
+                <Route path="/dashboard" element={
+                  <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <Dashboard onLogout={handleLogout} userRole={userRole} />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Employees route wrapped in ProtectedRoute */}
+                <Route path="/employees" element={
+                  <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <EmployeeList onLogout={handleLogout} />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Profile route wrapped in ProtectedRoute */}
+                <Route path="/profile" element={
+                  <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <ProfilePage onLogout={handleLogout} />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Reports route wrapped in ProtectedRoute */}
+                <Route path="/reports" element={
+                  <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <ReportsPage onLogout={handleLogout} />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Settings route wrapped in ProtectedRoute */}
+                <Route path="/settings" element={
+                  <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <Settings onLogout={handleLogout} />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Help route wrapped in ProtectedRoute */}
+                <Route path="/help" element={
+                  <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <HelpPage onLogout={handleLogout} />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Leave route wrapped in ProtectedRoute */}
+                <Route path="/leave" element={
+                  <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <LeavePage onLogout={handleLogout} />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Supabase testing route - menggunakan TestProtectedRoute untuk bypass autentikasi */}
+                <Route path="/supabase-test" element={
+                  <TestProtectedRoute>
+                    <SupabaseTestPage />
+                  </TestProtectedRoute>
+                } />
+                
+                {/* Supabase debug route */}
+                <Route path="/supabase-debug" element={
+                  <TestProtectedRoute>
+                    <SupabaseDebugPage />
+                  </TestProtectedRoute>
+                } />
+                
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            )}
+            {/* Show settings indicator except on login/register pages */}
+            {isAuthenticated && <SettingsIndicator />}
             </div>
-          )}
-          {requireTwoFA ? (
-            <TwoFactorAuth 
-              username={pendingUser}
-              onVerify={handleVerifyTwoFA}
-              onCancel={handleCancelTwoFA}
-            />
-          ) : (
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              
-              <Route path="/login" element={
-                isAuthenticated ? <Navigate to="/dashboard" /> : 
-                <Login onLogin={handleLogin} />
-              } />
-              
-              <Route path="/register" element={
-                isAuthenticated ? <Navigate to="/dashboard" /> : 
-                <Register />
-              } />
-              
-              <Route path="/reset-password" element={<ResetPassword />} />
-              
-              {/* Dashboard route wrapped in ProtectedRoute */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <Dashboard onLogout={handleLogout} userRole={userRole} />
-                </ProtectedRoute>
-              } />
-              
-              {/* Employees route wrapped in ProtectedRoute */}
-              <Route path="/employees" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <EmployeeList onLogout={handleLogout} />
-                </ProtectedRoute>
-              } />
-              
-              {/* Profile route wrapped in ProtectedRoute */}
-              <Route path="/profile" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <ProfilePage onLogout={handleLogout} />
-                </ProtectedRoute>
-              } />
-              
-              {/* Reports route wrapped in ProtectedRoute */}
-              <Route path="/reports" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <ReportsPage onLogout={handleLogout} />
-                </ProtectedRoute>
-              } />
-              
-              {/* Settings route wrapped in ProtectedRoute */}
-              <Route path="/settings" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <Settings onLogout={handleLogout} />
-                </ProtectedRoute>
-              } />
-              
-              {/* Help route wrapped in ProtectedRoute */}
-              <Route path="/help" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <HelpPage onLogout={handleLogout} />
-                </ProtectedRoute>
-              } />
-              
-              {/* Leave route wrapped in ProtectedRoute */}
-              <Route path="/leave" element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <LeavePage onLogout={handleLogout} />
-                </ProtectedRoute>
-              } />
-              
-              {/* Supabase testing route - menggunakan TestProtectedRoute untuk bypass autentikasi */}
-              <Route path="/supabase-test" element={
-                <TestProtectedRoute>
-                  <SupabaseTestPage />
-                </TestProtectedRoute>
-              } />
-              
-              {/* Supabase debug route - menggunakan TestProtectedRoute untuk bypass autentikasi */}
-              <Route path="/supabase-debug" element={
-                <TestProtectedRoute>
-                  <SupabaseDebugPage />
-                </TestProtectedRoute>
-              } />
-              
-              <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} />} />
-            </Routes>
-          )}
-          
-          {/* Display the settings indicator when user is authenticated */}
-          {isAuthenticated && (
-            <SettingsIndicator />
-          )}
-          </div>
-        </LeaveProvider>
+          </LeaveProvider>
+        </AuthProvider>
       </SidebarProvider>
     </ThrottleProvider>
   );
