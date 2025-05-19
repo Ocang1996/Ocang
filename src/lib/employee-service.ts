@@ -115,13 +115,6 @@ export const employeeService = {
    * Fungsi untuk mapping field employee ke format database (snake_case)
    */
   mapEmployeeToDb(employee: any) {
-    // Validasi UUID work_unit_id
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    const work_unit_id = employee.workUnitId || employee.work_unit_id;
-    if (!work_unit_id || !uuidRegex.test(work_unit_id)) {
-      throw new Error('work_unit_id harus berupa UUID valid!');
-    }
-    // Status mapping
     let status = employee.status;
     if (status === 'Aktif') status = 'active';
     if (status === 'Tidak Aktif' || status === 'Nonaktif') status = 'inactive';
@@ -131,19 +124,26 @@ export const employeeService = {
     return {
       nip: employee.nip,
       name: employee.name,
-      gender: employee.gender, // 'male' atau 'female'
-      birth_date: employee.birthDate ? employee.birthDate.split('T')[0] : undefined,
-      appointment_date: employee.appointmentDate ? employee.appointmentDate.split('T')[0] : undefined,
-      department: employee.department,
-      rank: employee.rank,
+      gender: employee.gender,
+      birthdate: employee.birthDate ? employee.birthDate.split('T')[0] : undefined,
+      joindate: employee.joinDate ? employee.joinDate.split('T')[0] : undefined,
+      employeetype: employee.employeeType,
+      workunit: employee.workUnitId || employee.workunit,
+      subunit: employee.subunit,
       position: employee.position,
+      rank: employee.rank,
+      class: employee.class,
+      educationlevel: employee.educationLevel,
+      educationmajor: employee.educationMajor,
+      email: employee.email,
+      phonenumber: employee.phoneNumber,
+      address: employee.address,
+      photo: employee.photo_url || employee.photo || null,
+      retirementdate: employee.retirementDate ? employee.retirementDate.split('T')[0] : undefined,
       status,
-      work_unit_id,
-      education: employee.educationLevel,
-      photo_url: employee.photo_url || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+      createdat: new Date().toISOString(),
+      updatedat: new Date().toISOString(),
+    } as Record<string, any>;
   },
 
   /**
@@ -154,7 +154,7 @@ export const employeeService = {
       const mappedEmployee = this.mapEmployeeToDb(employee);
       // Validasi field wajib
       const requiredFields = [
-        'nip', 'name', 'gender', 'birth_date', 'appointment_date', 'department', 'rank', 'position', 'status', 'work_unit_id'
+        'nip', 'name', 'gender', 'birthdate', 'joindate', 'employeetype', 'workunit', 'position', 'rank', 'status'
       ];
       for (const field of requiredFields) {
         if (!mappedEmployee[field] || mappedEmployee[field] === '') {
