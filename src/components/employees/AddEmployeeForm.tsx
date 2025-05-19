@@ -7,11 +7,12 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { registerLocale } from 'react-datepicker';
 import { id } from 'date-fns/locale/id';
+import { workUnitService } from '../../lib/workunit-service';
 registerLocale('id', id);
 
 interface AddEmployeeFormProps {
   onClose: () => void;
-  onSubmit: (employeeData: Omit<Employee, 'id'>) => Promise<Employee>;
+  onSubmit: (employeeData: Record<string, any>) => Promise<any>;
 }
 
 const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
@@ -23,7 +24,7 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
     employeeType: 'pns',
     joinDate: '', // Tanggal masuk kerja untuk NON ASN
     appointmentDate: '', // TMT Pengangkatan untuk ASN
-    workUnit: '',
+    workUnitId: '', // UUID
     position: '',
     rank: '',
     class: '',
@@ -72,6 +73,16 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
     };
   }, []);
 
+  const [workUnits, setWorkUnits] = useState<{ id: string, name: string }[]>([]);
+
+  useEffect(() => {
+    async function fetchWorkUnits() {
+      const units = await workUnitService.getAllWorkUnits();
+      setWorkUnits(units);
+    }
+    fetchWorkUnits();
+  }, []);
+
   // Helper function to get BUP based on jobType
   const getBUP = (jobType: string): number => {
     switch (jobType) {
@@ -118,8 +129,8 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
       newErrors.position = 'Jabatan harus diisi';
     }
     
-    if (!formData.workUnit.trim()) {
-      newErrors.workUnit = 'Unit kerja harus diisi';
+    if (!formData.workUnitId) {
+      newErrors.workUnitId = 'Unit kerja harus dipilih';
     }
     
     if (formData.birthDate && !isValidDate(formData.birthDate)) {
@@ -371,37 +382,26 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
   
   // Helper to prepare form data before sending to Supabase
   const prepareFormData = () => {
-    // Create a copy to avoid mutating the original
-    let preparedData: Record<string, any> = { ...formData };
-    
-    // Make sure all dates are in ISO format
-    if (preparedData.birthDate) {
-      preparedData.birthDate = new Date(preparedData.birthDate).toISOString();
-    }
-    
-    if (preparedData.appointmentDate) {
-      preparedData.appointmentDate = new Date(preparedData.appointmentDate).toISOString();
-    }
-    
-    if (preparedData.joinDate) {
-      preparedData.joinDate = new Date(preparedData.joinDate).toISOString();
-    }
-    
-    // Handle employee type specific data for Non-ASN
-    if (preparedData.employeeType === 'honorer') {
-      // Filter out fields specific to PNS/PPPK
-      const fieldsToExclude = ['nip', 'rank', 'class', 'positionHistory', 'appointmentDate', 'jobType'];
-      preparedData = Object.fromEntries(
-        Object.entries(preparedData).filter(([key]) => !fieldsToExclude.includes(key))
-      );
-    }
-    
-    // Filter out empty string values
-    preparedData = Object.fromEntries(
-      Object.entries(preparedData).filter(([_, value]) => value !== '')
-    );
-    
-    return preparedData as Omit<Employee, 'id'>;
+    // Mapping field ke snake_case dan hanya field yang diperlukan
+    return {
+      nip: formData.nip,
+      name: formData.name,
+      gender: formData.gender,
+      birth_date: formData.birthDate ? new Date(formData.birthDate).toISOString() : null,
+      appointment_date: formData.appointmentDate ? new Date(formData.appointmentDate).toISOString() : null,
+      rank: formData.rank,
+      position: formData.position,
+      status: formData.status === 'Aktif' ? 'active' : 'inactive',
+      work_unit_id: formData.workUnitId, // UUID
+      education_level: formData.educationLevel,
+      education_major: formData.educationMajor,
+      education_institution: formData.educationInstitution,
+      graduation_year: formData.graduationYear,
+      email: formData.email,
+      employee_type: formData.employeeType,
+      job_type: formData.jobType,
+      // Tambahkan field lain sesuai skema jika diperlukan
+    };
   }
   
   useEffect(() => {
@@ -731,19 +731,23 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
                   
                   <div className="space-y-3">
                     <div>
-                      <label htmlFor="workUnit" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label htmlFor="workUnitId" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Unit Kerja <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        id="workUnit"
-                        name="workUnit"
-                        value={formData.workUnit}
+                      <select
+                        id="workUnitId"
+                        name="workUnitId"
+                        value={formData.workUnitId || ''}
                         onChange={handleChange}
-                        className={`block w-full rounded-md border ${errors.workUnit ? 'border-red-300 dark:border-red-500 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400' : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400'} py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 dark:bg-gray-700 text-sm`}
-                      />
-                      {errors.workUnit && (
-                        <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.workUnit}</p>
+                        className="block w-full rounded-md border border-gray-300 dark:border-gray-600 py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 text-sm"
+                      >
+                        <option value="">Pilih Unit Kerja</option>
+                        {workUnits.map(unit => (
+                          <option key={unit.id} value={unit.id}>{unit.name}</option>
+                        ))}
+                      </select>
+                      {errors.workUnitId && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.workUnitId}</p>
                       )}
                     </div>
                     

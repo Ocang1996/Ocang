@@ -58,7 +58,8 @@ export const employeeService = {
       }
 
       // Apply pagination
-      query = query.order('name').limit(limit).offset(offset);
+      query = query.order('created_at', { ascending: false });
+      query = query.limit(limit).offset(offset);
 
       // Execute query
       const { data, error, count } = await query;
@@ -112,13 +113,63 @@ export const employeeService = {
   },
 
   /**
+   * Fungsi untuk mapping field employee ke format database (snake_case)
+   */
+  mapEmployeeToDb(employee: any) {
+    // Validasi UUID work_unit_id
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const work_unit_id = employee.workUnitId || employee.work_unit_id;
+    if (!work_unit_id || !uuidRegex.test(work_unit_id)) {
+      throw new Error('work_unit_id harus berupa UUID valid!');
+    }
+    // Status mapping
+    let status = employee.status;
+    if (status === 'Aktif') status = 'active';
+    if (status === 'Tidak Aktif' || status === 'Nonaktif') status = 'inactive';
+    if (status !== 'active' && status !== 'inactive') {
+      throw new Error('Status harus "active" atau "inactive"!');
+    }
+    return {
+      nip: employee.nip,
+      name: employee.name,
+      gender: employee.gender, // 'male' atau 'female'
+      birth_date: employee.birthDate ? employee.birthDate.split('T')[0] : undefined,
+      appointment_date: employee.appointmentDate ? employee.appointmentDate.split('T')[0] : undefined,
+      department: employee.department,
+      rank: employee.rank,
+      position: employee.position,
+      status,
+      work_unit_id,
+      education: employee.educationLevel,
+      photo_url: employee.photo_url || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  },
+
+  /**
    * Create new employee
    */
   async createEmployee(employee: Omit<Employee, 'id' | 'created_at'>): Promise<{ success: boolean; message: string; data?: Employee }> {
     try {
+      const mappedEmployee = this.mapEmployeeToDb(employee);
+      // Validasi field wajib
+      const requiredFields = [
+        'nip', 'name', 'gender', 'birth_date', 'appointment_date', 'department', 'rank', 'position', 'status', 'work_unit_id'
+      ];
+      for (const field of requiredFields) {
+        if (!mappedEmployee[field] || mappedEmployee[field] === '') {
+          return {
+            success: false,
+            message: `Field wajib '${field}' tidak boleh kosong!`,
+          };
+        }
+      }
+      // Logging data yang dikirim ke Supabase
+      console.log('Data yang dikirim ke Supabase:', mappedEmployee);
       const { data, error } = await supabase
         .from('employees')
-        .insert(employee)
+        .insert(mappedEmployee)
         .select()
         .single();
 

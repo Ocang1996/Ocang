@@ -161,10 +161,10 @@ export async function getEmployees(params?: {
       query = query.or(`name.ilike.%${params.search}%,nip.ilike.%${params.search}%,position.ilike.%${params.search}%`);
     }
     
-    // Execute query with proper pagination
+    // Execute query dengan urutan chaining yang benar untuk Supabase v2
     const { data, error, count } = await query
-      .range(start, end)
-      .order('createdAt', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(start, end);
     
     if (error) {
       console.error('Error fetching employees:', error);
