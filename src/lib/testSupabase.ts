@@ -120,7 +120,7 @@ export const testCreateEmployee = async (employeeData: any): Promise<TestResult>
       .from('employees')
       .insert([employeeData])
       .select();
-    
+
     if (error) {
       logMessage(`CREATE error: ${error.message}`);
       
@@ -192,7 +192,7 @@ export const testReadEmployees = async (): Promise<TestResult> => {
       .from('employees')
       .select()
       .limit(10);
-    
+
     if (error) {
       logMessage(`READ error: ${error.message}`);
       return {
@@ -247,7 +247,7 @@ export const testUpdateEmployee = async (employeeId: string, updateData: any): P
       .eq('id', employeeId)
       .select()
       .single();
-    
+
     if (error) {
       logMessage(`UPDATE error: ${error.message}`);
       
@@ -304,7 +304,7 @@ export const testDeleteEmployee = async (employeeId: string): Promise<TestResult
       .from('employees')
       .delete()
       .eq('id', employeeId);
-    
+
     if (error) {
       logMessage(`DELETE error: ${error.message}`);
       

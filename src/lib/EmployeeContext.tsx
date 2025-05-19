@@ -177,17 +177,6 @@ export const EmployeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   }, []);
 
-  // Refetch data - used for manual refresh and after mutations
-  const refreshData = useCallback(async () => {
-    setSyncStatus('syncing');
-    try {
-      await fetchEmployees();
-      setSyncStatus('idle');
-    } catch (err) {
-      setSyncStatus('error');
-    }
-  }, []);
-  
   // Fetch all employees with pagination and filtering
   const fetchEmployees = useCallback(async (params?: {
     page?: number;
@@ -226,7 +215,7 @@ export const EmployeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       
       // Fetch from Supabase
-      const result: PaginatedResponse<ApiEmployee> = await getEmployees(queryParams);
+      const result = await getEmployees(queryParams);
       const formattedData = result.data.map(emp => convertApiEmployee(emp));
       
       // Update state
@@ -252,6 +241,24 @@ export const EmployeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(false);
     }
   }, [pagination.page, pagination.limit]);
+  
+  // Refetch data - used for manual refresh and after mutations
+  const refreshData = useCallback(async () => {
+    setSyncStatus('syncing');
+    try {
+      // Clear cache before refreshing
+      listCache.current = null;
+      employeeCache.current = {};
+      
+      // Fetch fresh data
+      await fetchEmployees();
+      setSyncStatus('idle');
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+      setSyncStatus('error');
+      setError(err instanceof Error ? err.message : 'Failed to refresh data');
+    }
+  }, [fetchEmployees]);
   
   // Fetch single employee by ID
   const fetchEmployeeById = useCallback(async (id: string | number): Promise<Employee> => {
@@ -330,41 +337,31 @@ export const EmployeeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [selectedEmployee, refreshData]);
   
   // Add new employee
-  const addEmployee = useCallback(async (data: Omit<Employee, 'id'>): Promise<Employee> => {
+  const addEmployee = useCallback(async (data: Omit<Employee, 'id'>) => {
     try {
-      // Add timestamps
-      const dataWithTimestamps = {
-        ...data,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Ensure required fields are present before sending to API
-      if (!dataWithTimestamps.name) {
-        throw new Error('Name is required');
-      }
-
-      // Handle convertToApiEmployee for the create operation
-      const apiData = convertToApiEmployee(dataWithTimestamps);
-      
-      // Cast to satisfy TypeScript - we've already ensured required fields exist
-      const createData = apiData as Omit<ApiEmployee, 'id' | 'createdAt' | 'updatedAt'>;
-      const newEmployee = await createEmployee(createData);
+      setLoading(true);
+      // Create employee in database
+      const newEmployee = await createEmployee(data);
       
       // Convert to our format
-      const formattedData = convertApiEmployee(newEmployee);
+      const formattedEmployee = convertApiEmployee(newEmployee);
       
-      // Optimistically update UI
-      setEmployees(prev => [...prev, formattedData]);
-      
-      // Invalidate list cache
+      // Clear cache
       listCache.current = null;
+      employeeCache.current = {};
       
-      return formattedData;
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to add employee');
+      // Refresh data to get updated list
+      await refreshData();
+      
+      return formattedEmployee;
+    } catch (err) {
+      console.error('Error adding employee:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add employee');
+      throw err;
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [refreshData]);
   
   // Delete employee
   const deleteEmployee = useCallback(async (id: string | number) => {

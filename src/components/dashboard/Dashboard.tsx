@@ -1111,11 +1111,11 @@ const Dashboard = ({ onLogout, userRole = 'user' }: DashboardProps) => {
   
   // Update bagian render dashboard dengan dark mode
   return (
-    <div className={`flex-1 transition-all duration-300 ease-in-out ${expanded ? 'ml-[240px]' : 'ml-[88px] lg:ml-[104px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
+    <div className={`flex-1 transition-all duration-300 ease-in-out lg:ml-0 ${expanded ? 'lg:ml-[240px]' : 'lg:ml-[80px]'} min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
       <Sidebar onLogout={onLogout} />
       <div className="flex-1 flex flex-col w-full min-w-0">
         <Header title={t('dashboard_title')} onLogout={onLogout} />
-        <main className="flex-1 w-full min-w-0 px-2 sm:px-4 md:px-6 pt-20 pb-6 overflow-x-auto">
+        <main className="flex-1 w-full min-w-0 max-w-7xl mx-auto px-2 sm:px-4 md:px-6 pt-20 pb-8">
           <div className="mb-6 mt-2">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 text-transparent bg-clip-text">
               {t('dashboard_title')}

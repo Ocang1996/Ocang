@@ -327,8 +327,8 @@ const SupabaseTestPage: React.FC = () => {
                 <h3 className="font-medium">CREATE: {results.create.success ? 'Berhasil' : 'Gagal'}</h3>
                 {results.create.note && (
                   <p className="text-xs mt-1 text-gray-600">{results.create.note}</p>
-                )}
-              </div>
+                  )}
+                </div>
             )}
             
             {results.read && (
@@ -344,8 +344,8 @@ const SupabaseTestPage: React.FC = () => {
               <div className={`p-3 rounded ${results.update.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
                 <h3 className="font-medium">UPDATE: {results.update.success ? 'Berhasil' : 'Gagal'}</h3>
               </div>
-            )}
-            
+                )}
+                
             {results.delete && (
               <div className={`p-3 rounded ${results.delete.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
                 <h3 className="font-medium">DELETE: {results.delete.success ? 'Berhasil' : 'Gagal'}</h3>
@@ -361,7 +361,7 @@ const SupabaseTestPage: React.FC = () => {
                 {results.leave.note && (
                   <p className="text-xs mt-1 text-gray-600">{results.leave.note}</p>
                 )}
-              </div>
+                  </div>
             )}
             
             {results.rls && (

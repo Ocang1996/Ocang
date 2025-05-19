@@ -30,30 +30,30 @@ export function getSupabaseClient(): SupabaseClient {
     return _supabase;
   }
 
-  try {
+    try {
     // Log untuk debugging
     console.log('Initializing Supabase client with URL:', supabaseUrl);
     
     // Cek apakah window.supabase tersedia (loaded from CDN)
     if (typeof window !== 'undefined' && (window as any).supabase) {
-      const { createClient } = (window as any).supabase;
-      _supabase = createClient(supabaseUrl, supabaseAnonKey);
+          const { createClient } = (window as any).supabase;
+          _supabase = createClient(supabaseUrl, supabaseAnonKey);
       console.log('Supabase client initialized from window.supabase');
       return _supabase;
     }
     
     // Jika tidak tersedia, gunakan mock client
     console.warn('Using mock Supabase client. Functionality will be limited.');
-    _supabase = createMockClient();
-    
+          _supabase = createMockClient();
+          
     // Coba load dari CDN untuk penggunaan berikutnya
-    if (typeof window !== 'undefined') {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-      script.onload = () => {
+          if (typeof window !== 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+            script.onload = () => {
         try {
-          const { createClient } = (window as any).supabase;
-          _supabase = createClient(supabaseUrl, supabaseAnonKey);
+              const { createClient } = (window as any).supabase;
+              _supabase = createClient(supabaseUrl, supabaseAnonKey);
           console.log('Supabase client loaded and initialized from CDN');
         } catch (e) {
           console.error('Error creating Supabase client after CDN load:', e);
@@ -63,10 +63,10 @@ export function getSupabaseClient(): SupabaseClient {
         console.error('Failed to load Supabase client from CDN:', e);
       };
       document.head.appendChild(script);
-    }
-  } catch (e) {
-    console.error('Error initializing Supabase client:', e);
-    _supabase = createMockClient();
+      }
+    } catch (e) {
+      console.error('Error initializing Supabase client:', e);
+      _supabase = createMockClient();
   }
   
   // Memastikan _supabase tidak null
@@ -78,7 +78,7 @@ function createMockClient(): SupabaseClient {
   console.log('Creating mock Supabase client');
   
   const mockResponse = (data: any = null) => Promise.resolve({ 
-    data, 
+      data,
     error: null 
   });
   

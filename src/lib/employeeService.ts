@@ -132,9 +132,13 @@ export async function getEmployees(params?: {
     // Default pagination values
     const page = params?.page || 1;
     const limit = params?.limit || 10;
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
     
     // Build query
-    let query = supabase.from('employees').select('*', { count: 'exact' });
+    let query = supabase
+      .from('employees')
+      .select('*', { count: 'exact' });
     
     // Apply filters
     if (params?.employeeType) {
@@ -157,33 +161,25 @@ export async function getEmployees(params?: {
       query = query.or(`name.ilike.%${params.search}%,nip.ilike.%${params.search}%,position.ilike.%${params.search}%`);
     }
     
-    // Execute query with pagination - dengan cara paling sederhana
-    // Daripada menggunakan chaining yang kompleks, kita pisahkan step
-    let result;
-    try {
-      // Coba metode tanpa chain
-      result = await query;
-      
-      // Jika tidak ada error, kembalikan data
-      if (result && !result.error) {
-        const data = result.data || [];
-        const count = data.length;
-        return {
-          data: data as Employee[],
-          total: count || 0,
-          page,
-          limit,
-          totalPages: Math.ceil((count || 0) / limit)
-        };
-      }
-    } catch (queryError) {
-      console.error('Error in Supabase query:', queryError);
+    // Execute query with proper pagination
+    const { data, error, count } = await query
+      .range(start, end)
+      .order('createdAt', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching employees:', error);
+      throw error;
     }
     
-    // Jika sampai di sini, berarti ada error
-    throw new Error('Failed to fetch employees');
+    return {
+      data: data as Employee[],
+      total: count || 0,
+      page,
+      limit,
+      totalPages: Math.ceil((count || 0) / limit)
+    };
   } catch (error) {
-    console.error('Error fetching employees:', error);
+    console.error('Error in getEmployees:', error);
     throw error;
   }
 }
@@ -222,9 +218,6 @@ export async function createEmployee(employeeData: Omit<Employee, 'id' | 'create
     // Preprocessing data sebelum disimpan
     const processedData = processEmployeeData(employeeData);
     
-    // Generate a tempId in case we need to use it as fallback
-    const tempId = `temp_${Date.now().toString()}`;
-    
     // Insert ke database
     const { data, error } = await supabase
       .from('employees')
@@ -239,58 +232,17 @@ export async function createEmployee(employeeData: Omit<Employee, 'id' | 'create
       .single();
     
     if (error) {
-      console.error('Supabase error:', error);
-      
-      // Jika error berkaitan dengan RLS atau permission, coba berikan respons fallback
-      if (error.code === '42501' || error.message.includes('permission') || error.message.includes('policy')) {
-        console.warn('Permission error, returning simulated successful response');
-        
-        // Untuk development, buat data simulasi untuk UI
-        return {
-          id: tempId,
-          ...processedData,
-          createdAt: now,
-          updatedAt: now,
-          status: 'active'
-        } as Employee;
-      }
-      
-      throw new Error(`Failed to create employee: ${error.message}`);
+      console.error('Error creating employee:', error);
+      throw error;
     }
     
     if (!data) {
-      console.warn('No data returned from Supabase, using fallback data');
-      
-      // Fallback untuk UI
-      return {
-        id: tempId,
-        ...processedData,
-        createdAt: now,
-        updatedAt: now,
-        status: 'active'
-      } as Employee;
+      throw new Error('Failed to create employee: No data returned');
     }
     
     return data as Employee;
-  } catch (error: any) {
-    console.error('Error creating employee:', error);
-    
-    // Jika terjadi error koneksi atau server, berikan respons fallback untuk development
-    if (error.message.includes('Failed to fetch') || error.message.includes('network') || 
-        error.message.includes('connection')) {
-      const now = new Date().toISOString();
-      const tempId = `temp_${Date.now().toString()}`;
-      
-      console.warn('Connection error, returning simulated successful response');
-      return {
-        id: tempId,
-        ...employeeData,
-        createdAt: now,
-        updatedAt: now,
-        status: 'active'
-      } as Employee;
-    }
-    
+  } catch (error) {
+    console.error('Error in createEmployee:', error);
     throw error;
   }
 }

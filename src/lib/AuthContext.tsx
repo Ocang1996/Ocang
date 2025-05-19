@@ -48,16 +48,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Fungsi untuk refresh session
   const refreshSession = async () => {
-    try {
+      try {
       console.log('Refreshing auth session...');
       setLoading(true);
       
-      const session = await getCurrentSession();
-      setSession(session);
-      
-      if (session) {
-        const userData = await getCurrentUser();
-        setUser(userData);
+        const session = await getCurrentSession();
+        setSession(session);
+        
+        if (session) {
+          const userData = await getCurrentUser();
+          setUser(userData);
         console.log('Session refreshed successfully');
       } else {
         console.log('No active session found during refresh');
@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       
       setError(null);
-    } catch (err: any) {
+      } catch (err: any) {
       console.error('Error refreshing session:', err);
       // Jangan set error, karena ini bisa terjadi saat refresh normal
       // Dan akan menyebabkan UI menampilkan error yang tidak perlu
@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setLoading(false);
       }
     };
-
+    
     // Load initial session data
     checkSession();
 
