@@ -58,8 +58,7 @@ export const employeeService = {
       }
 
       // Apply pagination
-      query = query.order('created_at', { ascending: false });
-      query = query.limit(limit).offset(offset);
+      query = query.order('created_at', { ascending: false }).limit(limit).offset(offset);
 
       // Execute query
       const { data, error, count } = await query;

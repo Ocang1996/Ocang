@@ -73,16 +73,6 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
     };
   }, []);
 
-  const [workUnits, setWorkUnits] = useState<{ id: string, name: string }[]>([]);
-
-  useEffect(() => {
-    async function fetchWorkUnits() {
-      const units = await workUnitService.getAllWorkUnits();
-      setWorkUnits(units);
-    }
-    fetchWorkUnits();
-  }, []);
-
   // Helper function to get BUP based on jobType
   const getBUP = (jobType: string): number => {
     switch (jobType) {
@@ -734,18 +724,15 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
                       <label htmlFor="workUnitId" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Unit Kerja <span className="text-red-500">*</span>
                       </label>
-                      <select
+                      <input
+                        type="text"
                         id="workUnitId"
                         name="workUnitId"
-                        value={formData.workUnitId || ''}
+                        value={formData.workUnitId}
                         onChange={handleChange}
-                        className="block w-full rounded-md border border-gray-300 dark:border-gray-600 py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 text-sm"
-                      >
-                        <option value="">Pilih Unit Kerja</option>
-                        {workUnits.map(unit => (
-                          <option key={unit.id} value={unit.id}>{unit.name}</option>
-                        ))}
-                      </select>
+                        className={`block w-full rounded-md border ${errors.workUnitId ? 'border-red-300 dark:border-red-500 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400' : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400'} py-2 px-3 text-gray-900 dark:text-white shadow-sm focus:ring-2 dark:bg-gray-700 text-sm`}
+                        placeholder="Masukkan UUID Unit Kerja"
+                      />
                       {errors.workUnitId && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.workUnitId}</p>
                       )}
