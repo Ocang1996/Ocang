@@ -372,25 +372,28 @@ const AddEmployeeForm = ({ onClose, onSubmit }: AddEmployeeFormProps) => {
   
   // Helper to prepare form data before sending to Supabase
   const prepareFormData = () => {
-    // Mapping field ke snake_case dan hanya field yang diperlukan
     return {
       nip: formData.nip,
       name: formData.name,
       gender: formData.gender,
-      birth_date: formData.birthDate ? new Date(formData.birthDate).toISOString() : null,
-      appointment_date: formData.appointmentDate ? new Date(formData.appointmentDate).toISOString() : null,
-      rank: formData.rank,
+      birthdate: formData.birthDate ? new Date(formData.birthDate).toISOString().split('T')[0] : undefined,
+      appointmentdate: formData.appointmentDate ? new Date(formData.appointmentDate).toISOString().split('T')[0] : undefined,
+      joindate: formData.joinDate ? new Date(formData.joinDate).toISOString().split('T')[0] : undefined,
+      employeetype: formData.employeeType,
+      workunit: formData.workUnitId,
       position: formData.position,
-      status: formData.status === 'Aktif' ? 'active' : 'inactive',
-      work_unit_id: formData.workUnitId, // UUID
-      education_level: formData.educationLevel,
-      education_major: formData.educationMajor,
-      education_institution: formData.educationInstitution,
-      graduation_year: formData.graduationYear,
+      rank: formData.rank,
+      class: formData.class,
+      educationlevel: formData.educationLevel,
+      educationmajor: formData.educationMajor,
+      educationinstitution: formData.educationInstitution,
       email: formData.email,
-      employee_type: formData.employeeType,
-      job_type: formData.jobType,
-      // Tambahkan field lain sesuai skema jika diperlukan
+      phonenumber: formData.phoneNumber,
+      address: formData.address,
+      photo: formData.photo || null,
+      status: formData.status === 'Aktif' ? 'active' : 'inactive',
+      createdat: new Date().toISOString(),
+      updatedat: new Date().toISOString(),
     };
   }
   
